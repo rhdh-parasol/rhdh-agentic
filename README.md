@@ -32,9 +32,9 @@ An enterprise architect wants to build composable applications by assembling app
 
 This project serves a dual purpose. It provides tooling for agents to interact with Backstage — and it is itself built primarily using AI coding agents.
 
-We use this project to develop and validate **agentic SDLC practices** in an enterprise context: reusable agent skills, AI-assisted workflows, and patterns that scale across teams. Every stage of the software development lifecycle — from architecture and scaffolding through inner-loop development, CI/CD, and Day-2 operations — is an opportunity to test how agents and humans collaborate effectively.
+We use this project to develop and validate **agentic SDLC practices** in an enterprise context: each SDLC persona (product manager, architect, developer) is backed by a dedicated agent skill, version-controlled alongside the code. Skills and patterns proven here are designed to be adopted by other teams building on RHDH and Backstage.
 
-Skills and patterns proven here are designed to be adopted by other teams building on Backstage and RHDH.
+See **[Agentic Development](docs/agentic-development.md)** for the full walkthrough.
 
 ## Upstream Alignment
 

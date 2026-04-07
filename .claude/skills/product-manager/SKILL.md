@@ -7,7 +7,7 @@ description: Product Manager agent. Use when writing PRDs (Product Requirements 
 
 ## How the PM Skill Works
 
-This skill implements three PM loops, each handling a different phase of the
+This skill implements four PM loops, each handling a different phase of the
 product lifecycle. The PM agent never writes code. It writes specifications,
 creates issues, and reviews implementations against requirements.
 
