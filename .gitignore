@@ -1,0 +1,36 @@
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.envrc
+.env
+.env.*
+
+# Virtual environments
+.venv/
+venv/
+
+# Node
+node_modules/
+
+# Build
+dist/
+build/
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Local config
+.rhdh/
+
+# Claude
+.claude/settings.local.json
