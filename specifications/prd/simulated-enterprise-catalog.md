@@ -51,7 +51,7 @@ This is not a data dump of open-source projects. It is a curated enterprise narr
 | Principle | What It Means |
 |-----------|---------------|
 | **Opinionated over exhaustive** | The catalog tells a specific enterprise story with clear technology preferences and rationale — not a neutral survey of all possible tools |
-| **Depth over breadth** | 50 well-documented components with TechDocs, APIs, and relationships are more valuable than 500 skeleton entries |
+| **Depth over breadth** | The catalog may model a broader enterprise landscape, but the initial depth target is 50 well-documented components with full TechDocs, API, and relationship coverage — rather than hundreds of shallow skeleton entries |
 | **Upstream-native** | Standard Backstage entity kinds, annotations, and relationships. No distribution-specific extensions. Loadable into any Backstage instance |
 | **Agent-testable** | Rich enough to validate agent reasoning: an agent querying this catalog should be able to propose a grounded architecture, not just list entities |
 | **Real open-source projects** | Components reference real OSS projects (PostgreSQL, Kafka, Quarkus) with accurate descriptions and links — not fictional `service-alpha` placeholders |
@@ -116,7 +116,7 @@ The CLI and catalog are separate products with independent PRDs, but they are de
 
 ### Customer Validation
 
-The composable architecture use case is rooted in a real customer request. A [working prototype](https://github.com/rh-ita-ssa-devhub-org/rhdh-composable-plugin-experiment) (visual drag-and-drop architecture composition with scaffolder integration) received strong positive customer feedback. The catalog must support this workflow: browse approved components, compose an architecture, scaffold the result.
+The composable architecture use case is rooted in a real customer request. A [prior implementation](https://github.com/rh-ita-ssa-devhub-org/rhdh-composable-plugin-experiment) (visual drag-and-drop architecture composition with scaffolder integration) received strong positive customer feedback. The catalog must support this workflow: browse approved components, compose an architecture, scaffold the result.
 
 ## 6. Business Direction
 
