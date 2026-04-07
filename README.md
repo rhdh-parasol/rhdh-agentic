@@ -14,7 +14,7 @@ Backstage already holds the enterprise knowledge graph — the software catalog,
 
 ## What This Project Provides
 
-1. **[Backstage Agent CLI](specifications/prd/backstage-agent.md)** (`backstage-agent`) — Intent-based commands (inspired by [GitHub CLI](https://cli.github.com/)) that agents use to interact with the Backstage backend. A single command may aggregate multiple API calls, focusing on *what needs to be done* rather than how the API works. Works with upstream Backstage and distributions like RHDH.
+1. **Backstage Agent CLI** (`backstage-agent`) — Intent-based commands (inspired by [GitHub CLI](https://cli.github.com/)) that agents use to interact with the Backstage backend. A single command may aggregate multiple API calls, focusing on *what needs to be done* rather than how the API works. Works with upstream Backstage and distributions like RHDH.
 
 2. **A Simulated Enterprise Catalog** — Sample content representing a realistic enterprise with multiple databases, messaging systems, application frameworks, and existing services — complete with ownership, dependencies, and documentation. This gives agents something meaningful to reason about.
 
