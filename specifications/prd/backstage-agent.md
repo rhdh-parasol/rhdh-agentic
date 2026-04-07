@@ -1,6 +1,6 @@
 # Backstage Agent CLI
 
-**Status:** Draft
+**Status:** **Draft** | Review | Approved | Superseded
 **Date:** 2026-04-07
 **Author:** Marcel Hild
 
@@ -48,8 +48,8 @@ The CLI is designed for machine consumption first, human readability second:
 | Principle | What It Means |
 |-----------|---------------|
 | **Non-interactive** | No stdin prompts, no confirmations. All input via flags and arguments. Agents cannot handle interactive prompts. |
-| **`--help` as protocol contract** | Complete API surface: command signatures, output format, error recovery primitives. Agents discover the CLI cold from `--help` alone. |
-| **Safe by default** | Read-only operations as defaults. Mutations require explicit flags. Destructive flags hidden from `--help`, revealed contextually in command output. |
+| **`--help` as protocol contract** | Complete API surface: command signatures, output format, safety classification, and error recovery primitives. Agents discover the CLI cold from `--help` alone. |
+| **Safe by default** | Read-only operations as defaults. Mutations require explicit flags. Destructive operations are documented in `--help` but clearly marked as high-risk and gated behind explicit opt-in. |
 | **Next-step hints** | Every output suggests the logical next command. Agents navigate by running commands, not reading external docs. |
 | **Structured output** | JSON default for agent consumption. Human-readable format available via flag. |
 | **Informative errors** | What failed, why it likely failed, and what to try next — including concrete recovery commands. |
