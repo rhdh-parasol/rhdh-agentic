@@ -130,6 +130,7 @@ Customer validation exists: a composable architecture use case rooted in a real 
 - Platform engineers can deploy and configure the CLI without new infrastructure — it works with any Backstage instance and standard Backstage auth.
 - The CLI works with upstream Backstage and distributions like RHDH without modification.
 - New capability areas (beyond catalog, templates, TechDocs) can be added without redesigning the core CLI architecture.
+- The architecture must allow the agent functionality to be packaged as a Backstage CLI module (`@backstage/cli-module-agent`) in the future — even if the initial delivery is a standalone binary. This ensures upstream integration remains possible without a rewrite.
 
 ---
 
