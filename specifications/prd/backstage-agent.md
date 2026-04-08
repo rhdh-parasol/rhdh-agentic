@@ -41,6 +41,21 @@ The CLI provides intent-based access to the three pillars of Backstage:
 
 One CLI command may aggregate multiple API calls — focusing on what the agent needs to accomplish, not how the Backstage API works. Like `gh` for GitHub: a higher-level abstraction over the underlying APIs.
 
+### Interface Category: Agentic User Interface (AUI)
+
+The CLI represents a new interface category — an **Agentic User Interface (AUI)** — distinct from traditional CLIs, GUIs, or conversational UIs (CUIs):
+
+| Interface | Control Model | Interaction Pattern |
+|-----------|--------------|---------------------|
+| **CLI** | Human types commands, reads output | Command → Response |
+| **GUI** | Human clicks, system reacts | Action → Feedback |
+| **CUI** | Human asks, system answers | Request → Response |
+| **AUI** | Human states intent, agent acts autonomously | Intent → Autonomous Multi-Step Execution |
+
+In an AUI, the agent decides intermediate steps, asks for clarification only when needed, and delivers results. The interface becomes an **oversight interface** — the human monitors, intervenes, and approves rather than steering each step. This shifts UX patterns from input fields to trust signals, auditability, and intervention points.
+
+The `backstage-agent` CLI is the AUI that gives coding agents autonomous access to organizational context. Its design principles follow from this interface category.
+
 ### Agent-Native Design Principles
 
 The CLI is designed for machine consumption first, human readability second:
@@ -48,8 +63,8 @@ The CLI is designed for machine consumption first, human readability second:
 | Principle | What It Means |
 |-----------|---------------|
 | **Non-interactive** | No stdin prompts, no confirmations. All input via flags and arguments. Agents cannot handle interactive prompts. |
-| **`--help` as protocol contract** | Complete API surface: command signatures, output format, safety classification, and error recovery primitives. Agents discover the CLI cold from `--help` alone. |
-| **Safe by default** | Read-only operations as defaults. Mutations require explicit flags. Destructive operations are documented in `--help` but clearly marked as high-risk and gated behind explicit opt-in. |
+| **`--help` as protocol contract** | Complete API surface: command signatures, output format, safety classification, gating requirements, and error recovery primitives. Agents discover the CLI cold from `--help` alone. |
+| **Safe by default** | Read-only operations as defaults. Mutations require explicit flags. Destructive operations are documented in `--help` but clearly marked as high-risk and gated behind explicit opt-in or policy/config enablement. |
 | **Next-step hints** | Every output suggests the logical next command. Agents navigate by running commands, not reading external docs. |
 | **Structured output** | JSON default for agent consumption. Human-readable format available via flag. |
 | **Informative errors** | What failed, why it likely failed, and what to try next — including concrete recovery commands. |
@@ -67,6 +82,7 @@ The CLI becomes a first-class Backstage interface alongside the web UI — the w
 - **BEP-0013 AI Skills** are orthogonal. They help agents code *on* Backstage (development tooling). This CLI helps agents *use* Backstage as a platform (runtime interaction).
 - **MCP Catalog Modeling** ([#32062](https://github.com/backstage/backstage/issues/32062)) defines how MCP servers are represented in the catalog. Relevant for catalog content conventions.
 - A Platform CLI for Backstage is being developed in the community with the same `gh` CLI inspiration and auth-first approach. It targets human developers and CI/CD. This CLI targets coding agents as the primary consumer.
+- **Backstage CLI Module System** — The Backstage CLI (`@backstage/cli`) has a mature plugin architecture: packages with `backstage.role === 'cli-module'` in `package.json` are auto-discovered and loaded via `createCliModule()` from `@backstage/cli-node`. 11+ official modules exist (build, test, lint, auth, config, github, etc.) following the `@backstage/cli-module-{name}` naming convention. This creates a strategic packaging question: the agent CLI could ship as a standalone binary, as a Backstage CLI module (`@backstage/cli-module-agent`), or both. The packaging decision is FSD/Architect scope — the PRD defines the capability, not the delivery mechanism.
 
 ### Backstage Three Pillars
 
@@ -104,7 +120,7 @@ Customer validation exists: a composable architecture use case rooted in a real 
 - **Authentication implementation** — Auth mechanism (static tokens, OIDC Device Auth, etc.) is FSD scope.
 - **Command-level specifications** — Individual command signatures, input/output schemas, and acceptance criteria are FSD scope.
 - **Simulated enterprise catalog** — The demo catalog content is a separate product with its own PRD.
-- **Technology stack** — Implementation language, framework choices, and packaging are Architect decisions.
+- **Technology stack and packaging** — Implementation language, framework choices, and delivery mechanism (standalone binary, Backstage CLI module, or both) are Architect decisions.
 - **Distribution-specific features** — RHDH dynamic plugin management, RHDH RBAC administration, and other distribution-specific operations are future scope.
 
 ## 8. Success Outcomes
@@ -122,4 +138,6 @@ Customer validation exists: a composable architecture use case rooted in a real 
 - [Backstage MCP Actions RFC #30218](https://github.com/backstage/backstage/issues/30218)
 - [BEP-0013: AI Skills](https://github.com/backstage/backstage/pull/33173)
 - [MCP Catalog Modeling RFC #32062](https://github.com/backstage/backstage/issues/32062)
+- [Backstage CLI Module System](https://backstage.io/docs/tooling/cli/overview/) — `createCliModule()` API for CLI extensions
+- [BEP-0009: Plugin Metadata](https://github.com/backstage/backstage/blob/master/beps/0009-plugin-metadata/README.md) — Package role discovery (`backstage.role`)
 - [Composable Architecture Plugin](https://github.com/rh-ita-ssa-devhub-org/rhdh-composable-plugin-experiment) — Customer-validated prior art
