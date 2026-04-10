@@ -25,4 +25,5 @@ Existing codebases, tools, and content relevant to this project.
 | Resource | Description |
 |----------|-------------|
 | [red-hat-developer-hub-software-templates](https://github.com/redhat-developer/red-hat-developer-hub-software-templates) | RHDH-specific templates: ArgoCD, Quarkus, Spring Boot, Tekton, Ansible |
-| [backstage/software-templates](https://github.com/backstage/software-templates) | Official upstream templates: React, Spring Boot, Rails, etc. |
+| [backstage/software-templates](https://github.com/backstage/software-templates) | Official upstream templates: React, Spring Boot, Rails, etc.           |
+| [red-hat-developer-hub-openshift-ai-software-templates](https://github.com/redhat-ai-dev/ai-lab-template) | RHDH-specific templates: ArgoCD,Tekton, KServe, KubeFlow, LlamaStack   |
