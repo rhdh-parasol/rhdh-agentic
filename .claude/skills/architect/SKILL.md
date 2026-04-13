@@ -78,7 +78,7 @@ If the loop isn't clear from the conversation, ask:
 | "PRD review", "review PRD", "PRD readiness", "ready for ADR" | `workflows/prd-review.md` |
 | "decision", "ADR", "architecture decision" | `workflows/decision.md` |
 | "specification", "FSD", "spec", "technical spec" | `workflows/specification.md` |
-| "review", "technical review", "architecture review" | `workflows/technical-review.md` |
+| "review PR", "code review", "technical review", "architecture review" | `workflows/technical-review.md` |
 
 **After reading the workflow, follow it exactly.**
 

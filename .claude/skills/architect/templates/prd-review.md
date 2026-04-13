@@ -17,7 +17,7 @@
 
 {{Gaps that force the architect to make product decisions. If none, state "None."}}
 
-###  **{{Gap title}}** 
+### **{{Gap title}}**
 {{What's missing and what the PRD should clarify.}}
 
 ## Assumptions

@@ -15,8 +15,9 @@ Read these files before proceeding:
 
 ## Step 2: Read Context
 
-1. Read existing ADRs in `specifications/adr/` — prior decisions constrain what new ADRs are needed
-2. Read existing FSDs in `specifications/fsd/` — understand what specs have already been written
+1. Check for a prior review — search for an existing PRD review (in issue comments, PR comments, or `specifications/`) to avoid duplicating work. If one exists, summarize what changed since the last review and focus the new review on those changes
+2. Read existing ADRs in `specifications/adr/` — prior decisions constrain what new ADRs are needed
+3. Read existing FSDs in `specifications/fsd/` — understand what specs have already been written
 
 ## Step 3: Assess Architectural Sufficiency
 
