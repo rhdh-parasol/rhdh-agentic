@@ -1,0 +1,7 @@
+# markdownlint-cli2 configuration
+# Rule config lives in .markdownlint.json
+
+# Files downloaded via gwt (Google Workspace) — skip linting
+ignores:
+  - "meetings/transcripts/**"
+  - "meetings/agenda.md"
