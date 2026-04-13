@@ -19,16 +19,27 @@ Accepts either:
 
 **If input is a URL:**
 
-Download the transcript and store it locally with a dated filename:
+Download the transcript to a temporary file first, then rename once the date
+is known:
 
 ```bash
-gwt download "<url>" -f md -o meetings/transcripts/YYYY-MM-DD.md \
-  --enable-frontmatter -m "type=meeting-transcript" -m "date=YYYY-MM-DD"
+gwt download "<url>" -f md -o meetings/transcripts/_temp.md \
+  --enable-frontmatter -m "type=meeting-transcript"
 ```
 
-Determine the date from the transcript content (look for the date header near the top, e.g., "Apr 9, 2026"). Convert to ISO format for the filename.
+Parse the date from the downloaded content (look for the date header near the
+top, e.g., "Apr 9, 2026"). Convert to ISO format (`YYYY-MM-DD`).
 
-If a file already exists for that date, append a suffix: `YYYY-MM-DD-2.md`.
+Rename the temp file to its final name:
+
+```bash
+mv meetings/transcripts/_temp.md meetings/transcripts/YYYY-MM-DD.md
+```
+
+If a file already exists for that date, append a suffix:
+`YYYY-MM-DD-2.md`. Store the resolved basename (e.g., `2026-04-09` or
+`2026-04-09-2`) — all subsequent steps use this basename for the TLDR,
+log entry, and action item references.
 
 **If input is a local path:**
 
@@ -106,7 +117,8 @@ Extract from two sources:
 
 Read `templates/tldr.md` for the output format.
 
-Write the curated TLDR to `meetings/tldrs/YYYY-MM-DD.md`.
+Write the curated TLDR to `meetings/tldrs/<basename>.md` (using the resolved
+basename from step 1, which handles date suffixes like `YYYY-MM-DD-2`).
 
 Include the Google Doc URL (if available) and the local transcript path as links.
 

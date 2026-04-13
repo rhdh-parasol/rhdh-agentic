@@ -18,7 +18,7 @@ summaries) into curated TLDRs, and tracking action items across meetings.
 
 All Google Docs interaction uses the [`gwt` CLI](https://github.com/durandom/google-workspace-tools) (Google Workspace Tools).
 No MCP servers or Google API credentials are needed beyond gwt's OAuth setup.
-Install via `uv tool install git+https://github.com/durandom/google-workspace-tools.git`.
+Install via `uv tool install git+https://github.com/durandom/google-workspace-tools.git` (requires >=0.4.0).
 Use `gwt download` for single documents with explicit output paths.
 
 ### 2. Gemini Summaries Are a Starting Point
