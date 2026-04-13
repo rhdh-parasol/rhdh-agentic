@@ -1,6 +1,6 @@
 # Simulated Enterprise Catalog
 
-**Status:** Draft
+**Status:** Draft | Review | **Approved** | Superseded
 **Date:** 2026-04-07
 **Author:** Marcel Hild
 
