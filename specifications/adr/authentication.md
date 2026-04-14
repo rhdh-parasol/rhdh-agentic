@@ -3,7 +3,7 @@
 **Date:** 2026-04-14
 **Author:** Architect Agent
 **Parent PRD:** [backstage-agent](../prd/backstage-agent.md)
-**Related ADRs:** [technology-stack-and-packaging](technology-stack-and-packaging.md)
+**Related ADRs:** [technology-stack-and-packaging](technology-stack-and-packaging.md), [cli-backend-transport](cli-backend-transport.md)
 
 ---
 
