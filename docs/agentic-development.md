@@ -36,6 +36,12 @@ Because skills are version-controlled, the team's process evolves with the code.
 - **Specification** — Translates ADR decisions into Tier-2 technical specs (data models, APIs)
 - **Review** — Reviews PRs for structural compliance with architectural decisions
 
+**Tech Lead** (`tech-lead`) owns *implementation planning and epic decomposition*:
+
+- **Planning** — Breaks a PRD into implementation epics scoped for agent sessions
+- **Coordination** — Creates GitHub Issues for approved epics (optional coordination layer)
+- **Review** — Reviews PRs against epic acceptance criteria
+
 **Developer** (`developer`) owns *implementation and quality* *(planned)*:
 
 - Implementation against spec and ADR constraints
@@ -47,14 +53,16 @@ Because skills are version-controlled, the team's process evolves with the code.
 Personas don't talk to each other directly — they collaborate through **shared artifacts**:
 
 ```
-Product Manager                Architect                  Developer
-      │                            │                          │
-      ├─── PRD ────────────────►   │                          │
-      ├─── FSD ──────────────────► │                          │
-      │                            ├─── ADR ─────────────────►│
-      │                            ├─── Technical Spec ──────►│
-      │                            │                          │
-      │◄── PR (acceptance review)  │◄── PR (structural review)│
+Product Manager        Tech Lead           Architect              Developer
+      │                    │                    │                      │
+      ├─── PRD ──────────► │                    │                      │
+      ├─── FSD ────────────────────────────────► │                      │
+      │                    │ (reads PRD + FSD)   │                      │
+      │                    ├─── Epics ─────────────────────────────────►│
+      │                    │                    ├─── ADR ──────────────►│
+      │                    │                    ├─── Technical Spec ───►│
+      │                    │                    │                       │
+      │◄── PR (acceptance) │◄── PR (epic review)│◄── PR (structural)   │
 ```
 
 Each persona's skill defines its own review criteria, so a single PR can receive both an acceptance review (does it meet the spec?) and a structural review (does it follow the architecture?).
