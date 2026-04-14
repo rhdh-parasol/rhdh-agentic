@@ -8,14 +8,12 @@ Read these files before proceeding:
 
 ## Step 1: Gather Context
 
-1. Read the issue: `gh issue view <N> --json body,comments,labels`
-2. Identify the linked PR from issue comments or body
-3. Read the PR: `gh pr view <PR> --json body,files,additions,deletions,commits`
-4. Read the PR diff: `gh pr diff <PR>`
-5. Find the FSD from the issue body: `specifications/fsd/<domain>/<feature>.md`
-6. Read the FSD
-7. Identify referenced ADRs from the FSD's Technical Constraints section
-8. Read each referenced ADR in `specifications/adr/`
+1. Read the PR: `gh pr view <PR> --json body,files,additions,deletions,commits`
+2. Read the PR diff: `gh pr diff <PR>`
+3. Find the FSD from the PR body or from `specifications/fsd/<domain>/<feature>.md`
+4. Read the FSD
+5. Identify referenced ADRs from the FSD's Technical Constraints section
+6. Read each referenced ADR in `specifications/adr/`
 
 ## Step 2: Check ADR Compliance
 
@@ -54,19 +52,19 @@ Do NOT comment on:
 
 1. Read `templates/technical-review.md`
 2. Fill the template — verdict is binary: APPROVE or REQUEST CHANGES
-3. Post as PR review:
+3. Present the review to the human for confirmation before posting
 
-   ```bash
-   # For APPROVE:
-   gh pr review <PR> --approve --body "<review>"
+## Step 6: Post Review (after human confirmation)
 
-   # For REQUEST CHANGES:
-   gh pr review <PR> --request-changes --body "<review>"
-   ```
+Post as PR review:
 
-## Step 6: Update the Issue
+```bash
+# For APPROVE:
+gh pr review <PR> --approve --body "<review>"
 
-Post comment on issue referencing the review.
+# For REQUEST CHANGES:
+gh pr review <PR> --request-changes --body "<review>"
+```
 
 ## Step 7: Wait for Human Confirmation
 
@@ -81,5 +79,6 @@ Post comment on issue referencing the review.
 - [ ] Verdict is APPROVE or REQUEST CHANGES
 - [ ] Non-compliance items reference specific ADR decision numbers
 - [ ] No style comments — only structural concerns
+- [ ] Human confirmed review before posting to GitHub
 - [ ] Review posted as proper PR review (--approve or --request-changes)
 </success_criteria>

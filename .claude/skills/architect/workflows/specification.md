@@ -9,10 +9,10 @@ Read these files before proceeding:
 
 ## Step 1: Check Dependencies
 
-1. Read the issue: `gh issue view <N> --json body,comments,labels`
-2. Identify which ADRs this spec depends on (mentioned in issue body or obvious from topic)
+1. Identify the feature — provided as conversation input, a PRD reference, or a file path
+2. Identify which ADRs this spec depends on (from PRD context or obvious from topic)
 3. Verify those ADRs exist in `specifications/adr/` and are approved
-4. If a required ADR is missing or unapproved, post a comment listing which ADR(s) are needed — STOP
+4. If a required ADR is missing or unapproved, flag which ADR(s) are needed — STOP
 
 ## Step 2: Read ADR Decisions
 
@@ -58,7 +58,7 @@ Focus on:
    - **APIs** section with function signatures
    - **Invariants** section (unique to architect FSDs)
    - **Technical Constraints** referencing specific ADR decisions by number
-3. Determine the domain from the issue context, using kebab-case directory names
+3. Determine the domain from the feature context, using kebab-case directory names
 4. File at `specifications/fsd/<domain>/<feature-slug>.md`
 5. Keep under 300 lines
 
@@ -72,11 +72,11 @@ git commit -m "FSD: <feature name>"
 
 Do NOT create branches, push, or create PRs unless instructed.
 
-## Step 8: Update the Issue
+## Step 8: Present for Review
 
-Post comment with:
+Present to the human:
 
-- Link to the FSD file
+- Path to the FSD file
 - Summary of scope decisions
 - Open questions for review
 
