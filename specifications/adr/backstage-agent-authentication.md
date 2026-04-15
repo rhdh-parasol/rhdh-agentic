@@ -54,7 +54,7 @@ The auth implementation covers:
 
 Store credentials independently from `@backstage/cli`:
 
-- **Instance metadata:** `~/.config/backstage-agent/auth-instances.yaml` (not `backstage-cli/`)
+- **Instance metadata:** `~/.config/backstage-agent/config.yaml` (shared config file, not `backstage-cli/`)
 - **Secrets:** File-based storage at `~/.local/share/backstage-agent/auth-secrets/` (mode 0600), with optional keytar (OS keychain) support if available
 
 Using a separate storage path (`backstage-agent/` vs `backstage-cli/`) means:

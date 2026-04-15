@@ -94,10 +94,12 @@ Structure the `lib/` layer so commands depend on typed service interfaces, not o
 
 ```typescript
 // lib/catalog.ts — service interface
+// Concrete signatures are defined in the Catalog Commands FSD.
+// The interface below is illustrative of the pattern; the FSD is canonical.
 export interface CatalogService {
-  getEntities(filter?: EntityFilterQuery): Promise<Entity[]>;
-  getEntityByRef(ref: string): Promise<Entity>;
-  queryEntities(request: QueryEntitiesRequest): Promise<QueryEntitiesResponse>;
+  list(options?: ListEntitiesOptions): Promise<EntityListResult>;
+  get(ref: string): Promise<Entity>;
+  search(query: string, options?: SearchOptions): Promise<EntityListResult>;
 }
 
 // lib/catalog-rest.ts — REST implementation (initial)
