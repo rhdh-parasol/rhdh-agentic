@@ -53,7 +53,7 @@ Focus on:
 ## Step 6: Write the FSD
 
 1. Read `templates/fsd.md`
-2. Fill every section. The architect's FSD is more technical than a PM's:
+2. Fill every section. The FSD should be implementation-ready:
    - **Data Model** section with concrete type definitions
    - **APIs** section with function signatures
    - **Invariants** section (unique to architect FSDs)
@@ -82,7 +82,7 @@ Present to the human:
 
 ## Step 9: Wait for Human Review
 
-- **Approved**: FSD ready for decomposition or direct implementation.
+- **Approved**: FSD ready for epic planning or direct implementation.
 - **Revision needed**: Re-enter at Step 4.
 
 <success_criteria>

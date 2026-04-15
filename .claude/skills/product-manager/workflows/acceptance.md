@@ -65,7 +65,7 @@ gh pr review <PR> --request-changes --body "<verdict>"
 - [ ] Every relevant PRD goal appears in verdict
 - [ ] Verdict is exactly ACCEPT or REJECT
 - [ ] Scope drift section present (even if "none detected")
-- [ ] REJECT has actionable feedback; ACCEPT has "None — all criteria met."
+- [ ] REJECT has actionable feedback; ACCEPT has "None — all product goals met."
 - [ ] Human confirmed verdict before posting to GitHub
 - [ ] Review posted as proper PR review (--approve or --request-changes)
 </success_criteria>

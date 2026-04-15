@@ -36,7 +36,7 @@ Because skills are version-controlled, the team's process evolves with the code.
 
 **Tech Lead** (`tech-lead`) owns *execution planning*:
 
-- Produces epics from FSDs and/or ADRs (at least one is always required)
+- Produces epics from the PRD, using FSDs and/or ADRs when available
 - Orders epics by dependency and identifies parallelizable work
 
 **Developer** (`developer`) owns *implementation and quality* *(planned)*:
@@ -53,6 +53,7 @@ Personas don't talk to each other directly — they collaborate through **shared
 Product Manager        Architect            Tech Lead            Developer
       │                    │                    │                    │
       ├─── PRD ──────────► │                    │                    │
+      ├─── PRD ─────────────────────────────► │                    │
       │                    ├─── FSD ──────────► │                    │
       │                    ├─── ADR ──────────► │                    │
       │                    │                    ├─── Epics ─────────►│
@@ -60,7 +61,7 @@ Product Manager        Architect            Tech Lead            Developer
       │◄── PR (product)    │◄── PR (technical)  │                    │
 ```
 
-Each persona's skill defines its own review criteria, so a single PR can receive both a product review (does it deliver what the PRD asks for?) and a technical review (does it follow the architecture?). The Tech Lead produces epics from FSDs and/or ADRs — some work may have only an FSD, or only an ADR, or both, but at least one is always required.
+Each persona's skill defines its own review criteria, so a single PR can receive both a product review (does it deliver what the PRD asks for?) and a technical review (does it follow the architecture?). The Tech Lead produces epics from the PRD, using FSDs and/or ADRs when available to add technical detail.
 
 ### Current Tooling
 
@@ -112,7 +113,7 @@ The foundation. Each SDLC persona has a skill. Skills are version-controlled and
 
 ### Level 2: Multi-Persona Workflows
 
-Personas are aware of each other's artifacts and constraints. The PM's PRD feeds the architect's FSDs and ADRs, which the Tech Lead decomposes into work items for the developer.
+Personas are aware of each other's artifacts and constraints. The PM's PRD feeds the architect's FSDs and ADRs, which the Tech Lead breaks down into epics for the developer.
 
 **What you get:**
 

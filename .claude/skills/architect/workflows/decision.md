@@ -50,7 +50,7 @@ Be honest. Every decision has downsides.
 
 1. Read `templates/adr.md`
 2. Fill every section
-3. File at `specifications/adr/<slug>.md` (slug matches the issue title in kebab-case)
+3. File at `specifications/adr/<slug>.md` (slug matches the decision title in kebab-case)
 
 ## Step 7: Commit
 
