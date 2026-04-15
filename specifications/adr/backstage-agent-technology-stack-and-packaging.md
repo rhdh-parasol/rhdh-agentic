@@ -3,7 +3,7 @@
 **Date:** 2026-04-14
 **Author:** Architect Agent
 **Parent PRD:** [backstage-agent](../prd/backstage-agent.md)
-**Related ADRs:** [authentication](authentication.md), [cli-backend-transport](cli-backend-transport.md)
+**Related ADRs:** [authentication](backstage-agent-authentication.md), [cli-backend-transport](backstage-agent-cli-backend-transport.md)
 
 ---
 
@@ -112,7 +112,7 @@ export default createCliModule({
 ### Known Gaps
 
 - **G-1:** Authentication mechanism is not decided. The standalone CLI needs its own auth implementation (static tokens, OIDC, etc.). This is a separate ADR. Blocks: FSD for any command that requires auth.
-- **G-2:** ~~CLI backend transport (REST vs MCP Actions) is not decided.~~ **Resolved** — see [cli-backend-transport](cli-backend-transport.md). Decision: REST APIs as primary transport, `@backstage/catalog-client` for catalog, transport abstraction for future MCP support.
+- **G-2:** ~~CLI backend transport (REST vs MCP Actions) is not decided.~~ **Resolved** — see [cli-backend-transport](backstage-agent-cli-backend-transport.md). Decision: REST APIs as primary transport, `@backstage/catalog-client` for catalog, transport abstraction for future MCP support.
 - **G-3:** The exact Commander.js command contract for module compatibility is not specified. When the CLI module adapter is built, the command interface may need refinement. Low risk — can be addressed when the adapter is actually needed.
 
 ## Alternatives Considered

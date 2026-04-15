@@ -3,7 +3,7 @@
 **Date:** 2026-04-14
 **Author:** Architect Agent
 **Parent PRD:** [backstage-agent](../prd/backstage-agent.md)
-**Related ADRs:** [technology-stack-and-packaging](technology-stack-and-packaging.md), [cli-backend-transport](cli-backend-transport.md)
+**Related ADRs:** [technology-stack-and-packaging](backstage-agent-technology-stack-and-packaging.md), [cli-backend-transport](backstage-agent-cli-backend-transport.md)
 
 ---
 
@@ -26,7 +26,7 @@ The `@internal/cli` dependency makes `@backstage/cli-module-auth` unusable as a 
 
 **Key constraint from PRD:** The CLI is designed for agent consumption — non-interactive, no stdin prompts. The OAuth browser flow requires human interaction for the `login` step (user authenticates in browser). This is acceptable: login is a one-time setup step, not part of ongoing agent operation. All subsequent commands use stored tokens with automatic refresh.
 
-ADR dependency: `specifications/adr/technology-stack-and-packaging.md` (D-1: TypeScript, D-3: standalone CLI)
+ADR dependency: `specifications/adr/backstage-agent-technology-stack-and-packaging.md` (D-1: TypeScript, D-3: standalone CLI)
 
 ## Decision
 
@@ -63,7 +63,7 @@ Using a separate storage path (`backstage-agent/` vs `backstage-cli/`) means:
 - No risk of credential corruption from concurrent access by both CLIs
 - Users must authenticate separately for each CLI
 
-**Rationale:** The PRD positions backstage-agent as a standalone tool that doesn't depend on `@backstage/cli` (ADR technology-stack-and-packaging, D-3). Sharing credential storage would create an implicit runtime dependency on `@backstage/cli`'s storage format and location, contradicting the standalone design.
+**Rationale:** The PRD positions backstage-agent as a standalone tool that doesn't depend on `@backstage/cli` (ADR backstage-agent-technology-stack-and-packaging, D-3). Sharing credential storage would create an implicit runtime dependency on `@backstage/cli`'s storage format and location, contradicting the standalone design.
 
 ## Consequences
 
@@ -96,7 +96,7 @@ Read credentials from `~/.config/backstage-cli/auth-instances.yaml` and `~/.loca
 - Zero-friction for users who already have `backstage-cli` installed — single sign-on across both CLIs
 - No duplicated auth code — backstage-agent is purely a credential consumer
 
-**Why rejected:** Creates an implicit runtime dependency on `@backstage/cli`'s storage format, file paths, and secret store implementation. If upstream changes the storage schema, backstage-agent breaks silently. Also requires `@backstage/cli` to be installed for initial auth — contradicts the standalone design (ADR technology-stack-and-packaging, D-3). Finally, concurrent access to shared credential files without coordination risks corruption.
+**Why rejected:** Creates an implicit runtime dependency on `@backstage/cli`'s storage format, file paths, and secret store implementation. If upstream changes the storage schema, backstage-agent breaks silently. Also requires `@backstage/cli` to be installed for initial auth — contradicts the standalone design (ADR backstage-agent-technology-stack-and-packaging, D-3). Finally, concurrent access to shared credential files without coordination risks corruption.
 
 ### Alternative B: Depend on @backstage/cli-module-auth as npm Dependency
 
