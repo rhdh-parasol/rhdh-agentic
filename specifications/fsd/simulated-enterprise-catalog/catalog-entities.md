@@ -245,6 +245,7 @@ catalog:
 - **Given** any Component entity, **when** its YAML is inspected, **then** it has: description (>50 chars), at least 2 tags, owner ref, system ref, and at least 1 relationship (dependsOn, providesApi, or consumesApi).
 - **Given** the catalog, **when** an agent traverses relationships from `payment-gateway-api`, **then** it can reach: its owning team, its domain, its database dependency, the Kafka cluster, and the APIs it provides/consumes.
 - **Given** the catalog, **when** entity counts are tallied, **then** there are at least 6 Groups, 4 Domains, 12 Systems, 20 Components, 7 Resources, and 3 APIs.
+- **Given** an rhdh-local-setup instance, **when** the catalog Location URL is added to `app-config.local.yaml` and the instance is started with `rhdh local up`, **then** all entities load and are visible in the RHDH catalog UI.
 
 ## Invariants
 
@@ -260,12 +261,13 @@ catalog:
 - **Upstream-native only** (PRD Design Principle): Standard `backstage.io/v1alpha1` entity kinds and annotations. No custom kinds, no distribution-specific extensions.
 - **Real OSS references** (PRD Design Principle): Component descriptions and links reference real open-source projects with accurate information.
 - **Single entry point** (PRD Success Outcome): One Location entity loads the entire catalog. No manual multi-step registration.
+- **rhdh-local-setup compatible**: The catalog must load in rhdh-local-setup via a single catalog location entry in `app-config.local.yaml`. No custom plugins, no additional configuration beyond the URL. Entity YAML files must be individually loadable (one entity per `kind` per document, no multi-document tricks that break local file-based loading).
 
 ## Out of Scope
 
 - **TechDocs content** — Covered by FSD 2. This FSD only defines the `backstage.io/techdocs-ref` annotation on entities that will have docs.
 - **Software Template implementations** — Covered by FSD 3. This FSD defines the `catalog/templates/` directory but not template content.
-- **Runtime environment** — How to run Backstage with this catalog (Docker, local dev) is deployment scope per the PRD.
+- **rhdh-local-setup customization files** — Providing ready-made `app-config.local.yaml` snippets or overlay files for rhdh-local is a convenience; the catalog itself must work with any standard Backstage instance including rhdh-local-setup.
 - **User entities** — The catalog models teams (Groups) but not individual users. Users are deployment-specific.
 
 ## Validation
