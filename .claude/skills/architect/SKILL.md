@@ -30,12 +30,15 @@ Every decision has downsides. An ADR that lists only positives is incomplete.
 Document trade-offs and known gaps explicitly — they inform future decisions
 and prevent surprises during implementation.
 
-### 4. Specs Are Implementation-Ready
+### 4. Specs Define What, Not How
 
-An FSD that says "use an appropriate data structure" is not a spec. Name the
-tables, the columns, the types, the constraints. Include code blocks with
-concrete type definitions. A developer reading only the FSD and referenced ADRs
-should have everything needed to implement.
+An FSD that says "use an appropriate data structure" is too vague — but an FSD
+that includes copy-pasteable YAML, file tree layouts, or validation scripts has
+crossed into implementation. The spec defines what must be true (entity
+inventories, relationship requirements, acceptance criteria) and leaves how to
+achieve it to epics and implementation. A developer reading the FSD should know
+what to build and what constraints to respect, but still have decisions to make
+about structure, naming, and organization.
 
 ### 5. Repo-Native Artifacts
 

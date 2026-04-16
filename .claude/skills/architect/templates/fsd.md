@@ -18,26 +18,16 @@
 **I want** {{specific capability}},
 **so that** {{benefit tied to project success metric}}.
 
-## Data Model
+## What Exists
 
-{{Entities, tables, or types with field names, types, keys, and constraints. Be concrete.}}
+{{Inventories, categories, counts, and their purpose. Use tables and prose.
+Define what the feature produces — not file layouts, code blocks, or YAML structures.
+Leave implementation decisions (naming, organization, syntax) to epics.}}
 
-```
-// Example type definition — use the project's language
-type Example struct {
-    ID   string
-    Name string
-}
-```
+## Requirements
 
-## APIs
-
-{{Entry points, function signatures, parameters, behavior, error conditions.}}
-
-```
-// Example API signature — use the project's language
-func ExampleAction(ctx Context, param Type) (Result, error)
-```
+{{Contracts, constraints, rules, and relationships that must hold.
+What must connect to what? What must be queryable? What are the boundaries?}}
 
 ## Acceptance Criteria
 
@@ -61,12 +51,10 @@ func ExampleAction(ctx Context, param Type) (Result, error)
 
 ## Validation
 
-```bash
-# Example validation command
-{{test command}}
-```
-
-{{Description of what passing looks like.}}
+{{How to verify the feature works. Describe what passing looks like in prose.
+Do not write validation scripts — those are implementation artifacts.
+The Acceptance Criteria above define what "done" means; this section describes
+how a reviewer or agent would confirm it.}}
 
 ## Open Questions
 
