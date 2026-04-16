@@ -30,14 +30,16 @@ For each dependency ADR:
 
 ## Step 4: Design the Solution
 
-Define concretely:
+Define what must be true, not how to implement it:
 
-- **Data model:** Tables/entities with field names, types, keys, constraints
-- **APIs/endpoints:** Function signatures, parameters, return types, behavior
-- **Invariants:** Rules that must always hold (become test assertions)
-- **Error conditions:** What happens when inputs are invalid
+- **What exists:** Entity inventories, categories, counts, and their purpose
+- **What connects:** Relationship requirements — what must be traversable, not the syntax
+- **What constrains:** Rules, approved choices, governance boundaries
+- **What fails:** Error conditions and invalid states
 
-Use code blocks with concrete type definitions — they should be close to copy-pasteable.
+Use tables and prose to specify requirements. Avoid code blocks, file tree layouts,
+and validation scripts — those are implementation decisions for epics. The spec should
+leave the developer with meaningful decisions about structure and organization.
 
 ## Step 5: Write Acceptance Criteria
 
@@ -53,11 +55,12 @@ Focus on:
 ## Step 6: Write the FSD
 
 1. Read `templates/fsd.md`
-2. Fill every section. The FSD should be implementation-ready:
-   - **Data Model** section with concrete type definitions
-   - **APIs** section with function signatures
-   - **Invariants** section (unique to architect FSDs)
+2. Fill every section. The FSD should specify what, not how:
+   - **What Exists** section — inventories, categories, counts, relationships
+   - **Requirements** section — constraints, rules, contracts
+   - **Invariants** section — rules that must always hold
    - **Technical Constraints** referencing specific ADR decisions by number
+   - Avoid code blocks, file trees, and scripts — those are implementation
 3. Determine the domain from the feature context, using kebab-case directory names
 4. File at `specifications/fsd/<domain>/<feature-slug>.md`
 5. Keep under 300 lines
