@@ -18,242 +18,103 @@ Provide the prose layer that tells agents *why* technology decisions were made a
 **I want** to read TechDocs attached to catalog entities that explain technology standards, approved stacks, and domain-specific rationale,
 **so that** I can propose architectures that respect organizational constraints and understand *why* specific technologies were chosen.
 
-## Data Model
+## TechDocs Coverage
 
-### TechDocs Architecture
+Not every entity needs TechDocs. The depth-over-breadth principle applies — roughly 19 well-written TechDocs sites rather than skeleton stubs for every entity.
 
-Each TechDocs site is a standalone mkdocs project rooted at a catalog entity. The entity's `backstage.io/techdocs-ref` annotation points to the docs directory.
+| Entity Level | Gets TechDocs | Count |
+|-------------|---------------|-------|
+| Domain | All domains | 4 |
+| System | Priority systems with key architectural decisions | ~6 |
+| Resource | Key infrastructure with technology rationale | ~3 |
+| Component | Components with non-obvious design or onboarding needs | ~5 |
+| Group | Architecture board (org-wide standards) | 1 |
 
-```
-catalog/
-  platform/
-    event-backbone.yaml
-    event-backbone/
-      docs/
-        mkdocs.yml
-        docs/
-          index.md           # System overview
-          adr/
-            001-kafka-as-standard.md
-          standards/
-            event-schema-conventions.md
-```
+## Document Types
 
-### Entity-to-TechDocs Binding
+Each TechDocs site contains one or more of the following document types. The document type determines the required sections — not the exact content, which is an implementation decision.
 
-```yaml
-# In the entity YAML
-metadata:
-  annotations:
-    backstage.io/techdocs-ref: dir:./event-backbone/docs
-```
+### 1. Domain Handbooks
 
-### Which Entities Get TechDocs
+Attached to each Domain entity. The primary artifact agents use to understand what technologies are approved and why.
 
-Not every entity needs TechDocs. The depth-over-breadth principle applies:
+**Required sections:**
 
-| Entity Level | Gets TechDocs | Content Type |
-|-------------|---------------|--------------|
-| **Domain** (4) | All 4 | Domain handbook: approved stacks, governance rules, team charter |
-| **System** (12) | 6 priority systems | System overview, ADRs for key decisions, runbooks |
-| **Component** (20+) | 5 key components | Component-specific onboarding, API usage guide |
-| **Resource** (7) | 3 key resources | Operational guide, why-this-technology rationale |
-| **Group** (6) | 1 (architecture-board) | Organization-wide standards, cross-cutting policies |
+- **Approved Stack** — table with: category, technology, status (required/preferred/allowed), and rationale for each choice
+- **Governance Rules** — what is mandatory, what requires approval, what is forbidden
+- **When to Deviate** — criteria for requesting an exception to the approved stack
 
-**Total TechDocs sites: ~19** (quality over quantity).
+### 2. Architecture Decision Records (ADRs)
 
-### Document Types
+Attached to System entities for key technology decisions. Each ADR documents a specific decision with its trade-offs.
 
-**1. Domain Handbooks** (attached to Domain entities)
+**Required sections:**
 
-```markdown
-# [Domain] Technology Standards
+- Status, Date, Context
+- Decision (what was decided)
+- Alternatives Considered (at least one, with reason for rejection)
+- Consequences (positive and negative)
 
-## Approved Stack
-| Category | Technology | Status | Rationale |
-|----------|-----------|--------|-----------|
-| Backend  | Quarkus   | Required | Low memory, fast startup, GraalVM-ready |
-| Database | PostgreSQL | Required | ACID compliance for financial transactions |
+### 3. Technology Rationale Docs
 
-## Governance Rules
-- All new services MUST use the approved backend framework
-- Database exceptions require Architecture Board approval (ADR required)
+Attached to key Resource entities (databases, message brokers). Explains why this technology was selected over alternatives.
 
-## When to Deviate
-[Criteria for requesting an exception...]
-```
+**Required sections:**
 
-**2. Architecture Decision Records** (attached to System entities)
+- Approved use cases (what this technology is for)
+- Not-approved use cases (what to use instead)
+- Alternatives considered with reasons for rejection
 
-Following the standard ADR format:
+### 4. Component Onboarding Guides
 
-```markdown
-# ADR-001: Kafka as Enterprise Event Backbone
+Attached to key Components. Helps developers (and agents) understand how to work with or extend the component.
 
-## Status: Accepted
-## Date: 2025-06-15
+**Required sections:**
 
-## Context
-Meridian needs a unified async messaging platform...
+- Prerequisites
+- Key design decisions (with cross-references to relevant ADRs)
 
-## Decision
-Apache Kafka as the enterprise standard for event streaming.
-RabbitMQ approved for command/task patterns only.
+### 5. Organization-wide Standards
 
-## Consequences
-- Positive: Single event format, schema registry, replay capability
-- Negative: Operational overhead, Kafka expertise required
-- Negative: Not ideal for simple request-reply patterns (use RabbitMQ)
-```
+Attached to the architecture-board Group. Cross-cutting engineering standards that apply across all domains.
 
-**3. Technology Rationale Docs** (attached to Resource entities)
+**Required topics:** API design conventions, observability requirements, security/auth patterns.
 
-```markdown
-# Why PostgreSQL
+## Agent Queryability
 
-## Approved For
-- All transactional workloads in Payments domain (required)
-- General-purpose RDBMS in Customer and Platform domains (preferred)
+The TechDocs content must be rich enough for an agent to derive concrete answers. Specifically:
 
-## Not Approved For
-- Document-heavy workloads (use MongoDB)
-- Caching/session (use Redis)
-
-## Alternatives Considered
-| Alternative | Verdict | Reason |
-|------------|---------|--------|
-| MySQL | Rejected | Weaker JSON support, licensing concerns |
-| CockroachDB | Deferred | Evaluate when multi-region becomes a requirement |
-```
-
-**4. Onboarding Guides** (attached to key Components)
-
-```markdown
-# Getting Started with payment-gateway-api
-
-## Prerequisites
-- JDK 21+, Quarkus CLI
-- Access to Kafka dev cluster
-
-## Local Development
-[Step-by-step setup...]
-
-## Key Design Decisions
-- Uses CQRS pattern (see ADR-003)
-- All mutations produce Kafka events (see event-schema-conventions)
-```
-
-**5. Organization-wide Standards** (attached to architecture-board Group)
-
-```markdown
-# Meridian Engineering Standards
-
-## API Design
-- REST APIs must follow OpenAPI 3.0+
-- Event APIs must use AsyncAPI 2.x with Avro schemas
-
-## Observability
-- All services must emit OpenTelemetry traces
-- Structured JSON logging to stdout
-
-## Security
-- OAuth2/OIDC via Keycloak for all service-to-service auth
-- No hardcoded credentials — use vault integration
-```
-
-### mkdocs.yml Convention
-
-Every TechDocs site uses a minimal, consistent mkdocs configuration:
-
-```yaml
-site_name: <entity-name>
-nav:
-  - Overview: index.md
-  - ADRs:
-    - 'ADR-001: <title>': adr/001-<slug>.md
-  - Standards:
-    - '<title>': standards/<slug>.md
-plugins:
-  - techdocs-core
-```
-
-### Priority TechDocs Sites (initial implementation)
-
-| # | Entity | Kind | Content |
-|---|--------|------|---------|
-| 1 | `payments` | Domain | Approved stack matrix, governance rules |
-| 2 | `customer` | Domain | Approved stack matrix, governance rules |
-| 3 | `platform` | Domain | Approved stack matrix, governance rules |
-| 4 | `data-analytics` | Domain | Approved stack matrix, governance rules |
-| 5 | `event-backbone` | System | Kafka ADR, event schema standards |
-| 6 | `payment-processing` | System | CQRS ADR, settlement design |
-| 7 | `identity-platform` | System | Keycloak ADR, auth patterns |
-| 8 | `customer-onboarding` | System | MongoDB ADR, KYC flow |
-| 9 | `observability-stack` | System | OpenTelemetry ADR, alerting standards |
-| 10 | `data-lake` | System | ETL architecture ADR |
-| 11 | `postgresql-primary` | Resource | Why-PostgreSQL rationale |
-| 12 | `kafka-cluster` | Resource | Operational guide, topic naming |
-| 13 | `mongodb-cluster` | Resource | Why-MongoDB rationale |
-| 14 | `payment-gateway-api` | Component | Onboarding guide, API usage |
-| 15 | `customer-profile-service` | Component | Onboarding guide |
-| 16 | `notification-dispatcher` | Component | Channel routing design |
-| 17 | `etl-pipeline` | Component | Pipeline configuration guide |
-| 18 | `ml-model-server` | Component | Model deployment guide |
-| 19 | `architecture-board` | Group | Org-wide engineering standards |
-
-## APIs
-
-No runtime APIs. The "API" is the mkdocs build:
-
-```bash
-# Build TechDocs locally (standard Backstage tooling)
-npx @techdocs/cli generate --source-dir catalog/platform/event-backbone/docs --output-dir site/
-npx @techdocs/cli serve
-```
+- An agent reading a Domain handbook must be able to answer: "What framework should I use for a new service in this domain?" with a specific technology and rationale.
+- An agent reading an ADR must be able to answer: "Why was X chosen over Y?" with specific trade-offs.
+- An agent reading a Resource rationale doc must be able to answer: "Should I use this technology for use case Z?" with a yes/no and reasoning.
 
 ## Acceptance Criteria
 
-- **Given** a Domain entity with TechDocs, **when** an agent reads the TechDocs content, **then** it finds an approved stack matrix with technology names, statuses (required/preferred/allowed), and rationale for each choice.
-- **Given** a System entity with an ADR in TechDocs, **when** an agent reads the ADR, **then** it finds: context, decision, at least one alternative considered, and consequences (positive and negative).
-- **Given** the `payments` domain handbook, **when** an agent queries what framework to use for a new Payments service, **then** the answer "Quarkus" is derivable from the document with the rationale "low memory, fast startup, GraalVM-ready."
-- **Given** a Resource entity with TechDocs, **when** an agent reads the rationale doc, **then** it finds: approved use cases, explicitly not-approved use cases, and alternatives considered with reasons for rejection.
-- **Given** any TechDocs site, **when** `mkdocs build` is run against its `mkdocs.yml`, **then** the build succeeds with no errors.
+- **Given** a Domain entity with TechDocs, **when** an agent reads the content, **then** it finds an approved stack matrix with technology names, statuses, and rationale.
+- **Given** a System entity with an ADR, **when** an agent reads it, **then** it finds: context, decision, at least one alternative considered, and consequences (positive and negative).
+- **Given** the Payments domain handbook, **when** an agent queries what framework to use, **then** the answer "Quarkus" is derivable with rationale.
+- **Given** a Resource with TechDocs, **when** an agent reads the rationale doc, **then** it finds: approved use cases, not-approved use cases, and alternatives considered.
+- **Given** any TechDocs site, **when** built with standard Backstage TechDocs tooling, **then** the build succeeds with no errors.
 
 ## Invariants
 
-- Every entity with a `backstage.io/techdocs-ref` annotation has a valid `mkdocs.yml` at the referenced location.
-- Every `mkdocs.yml` uses `techdocs-core` plugin and has a `nav` section.
-- Every ADR follows the format: Status, Date, Context, Decision, Alternatives, Consequences.
+- Every entity with a `backstage.io/techdocs-ref` annotation has a buildable TechDocs site at the referenced location.
+- Every ADR follows the required sections: Status, Date, Context, Decision, Alternatives, Consequences.
 - Every Domain handbook includes an Approved Stack table and Governance Rules section.
 - No TechDocs content references fictional URLs or placeholder links.
 
 ## Technical Constraints
 
 - **Upstream-native** (PRD): Standard Backstage TechDocs with `techdocs-core` plugin. No custom mkdocs plugins.
-- **Agent-testable** (PRD): TechDocs content must be rich enough for an agent to derive concrete technology recommendations from prose.
-- **Depth over breadth** (PRD): 19 well-written TechDocs sites, not 50 skeleton stubs.
+- **Agent-testable** (PRD): Content must be rich enough for an agent to derive concrete technology recommendations from prose.
+- **Depth over breadth** (PRD): ~19 well-written sites, not 50 skeleton stubs.
 
 ## Out of Scope
 
 - **TechDocs build infrastructure** — CI/CD for generating and publishing TechDocs sites is deployment scope.
 - **Custom mkdocs themes or plugins** — Standard techdocs-core only.
-- **API reference docs** — Auto-generated API docs from OpenAPI specs are separate from hand-written TechDocs.
-
-## Validation
-
-```bash
-# Verify all techdocs-ref annotations point to existing mkdocs.yml
-grep -r "techdocs-ref" catalog/ | while read line; do
-  dir=$(echo "$line" | grep -o "dir:.*" | sed 's/dir://')
-  file=$(dirname "$(echo "$line" | cut -d: -f1)")/$dir/mkdocs.yml
-  [ -f "$file" ] && echo "OK: $file" || echo "MISSING: $file"
-done
-
-# Build each TechDocs site
-find catalog/ -name 'mkdocs.yml' -exec npx @techdocs/cli generate --source-dir $(dirname {}) \;
-```
-
-Passing looks like: all `techdocs-ref` annotations resolve, all mkdocs builds succeed.
+- **API reference docs** — Auto-generated docs from OpenAPI specs are separate from hand-written TechDocs.
+- **Directory structure and mkdocs.yml layout** — How TechDocs files are organized on disk is an implementation decision.
 
 ---
 
@@ -262,3 +123,4 @@ Passing looks like: all `techdocs-ref` annotations resolve, all mkdocs builds su
 | Version | Date | Author | Summary |
 |---------|------|--------|---------|
 | 0.1 | 2026-04-16 | Architect Agent | Initial draft |
+| 0.2 | 2026-04-16 | Architect Agent | Strip implementation details, raise to spec level |
