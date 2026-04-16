@@ -43,7 +43,7 @@ Do NOT create branches, push, or create PRs unless instructed.
 
 PRDs require human approval before FSDs can be written.
 
-- **Approved**: Transition to Discovery (write FSDs)
+- **Approved**: PRD is ready. The Architect can now write FSDs and ADRs
 - **Revision needed**: Re-enter at Step 1
 
 <success_criteria>

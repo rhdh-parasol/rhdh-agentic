@@ -2,7 +2,6 @@
 
 **Epic:** [`specifications/epics/{{prd-slug}}/{{epic-slug}}.md`]({{link}})
 **PR:** #{{pr-number}}
-**Issue:** #{{issue-number}}
 
 ---
 
