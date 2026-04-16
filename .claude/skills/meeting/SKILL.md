@@ -62,7 +62,7 @@ If the command isn't clear from the conversation, ask:
 |--------|----------|
 | "sync", "refresh", "update agenda" | `workflows/sync.md` |
 | "process", "transcript", "TLDR", URL or file path | `workflows/process.md` |
-| "status", "actions", "open items", "recent meetings" | `workflows/status.md` |
+| "status", "actions", "open items", "recent meetings", optional count (e.g. `status 3`) | `workflows/status.md` |
 
 **After reading the workflow, follow it exactly.**
 
