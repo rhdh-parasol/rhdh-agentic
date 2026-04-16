@@ -2,7 +2,6 @@
 
 **Date:** {{YYYY-MM-DD}}
 **Author:** Architect Agent
-**GitHub Issue:** #{{issue-number}}
 
 ---
 

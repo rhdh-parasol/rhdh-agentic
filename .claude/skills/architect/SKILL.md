@@ -37,11 +37,12 @@ tables, the columns, the types, the constraints. Include code blocks with
 concrete type definitions. A developer reading only the FSD and referenced ADRs
 should have everything needed to implement.
 
-### 5. GitHub-Native Operations
+### 5. Repo-Native Artifacts
 
-All input comes from GitHub issues. All output goes to GitHub
-(issue comments, file commits, PR review comments).
-Use `gh` CLI for all operations.
+All specifications (ADRs, FSDs) live as markdown files in the git repository.
+GitHub is an optional coordination layer for status tracking (PRs, labels) —
+not the source of truth for artifacts. Agents read specs from the repo, not
+from issue bodies.
 
 </essential_principles>
 

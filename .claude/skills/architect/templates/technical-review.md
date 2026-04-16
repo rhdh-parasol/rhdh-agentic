@@ -1,9 +1,8 @@
 ## Technical Design Review
 
 **PR:** #{{pr-number}}
-**Issue:** #{{issue-number}}
 **FSD:** [`specifications/fsd/{{domain}}/{{feature}}.md`]({{link}})
-**ADRs checked:** {{#N, #M, ...}}
+**ADRs checked:** {{adr-slug-a, adr-slug-b, ...}}
 
 ---
 

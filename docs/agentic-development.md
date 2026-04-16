@@ -25,26 +25,23 @@ Because skills are version-controlled, the team's process evolves with the code.
 
 **Product Manager** (`product-manager`) owns the *what* and *why*:
 
-- **Vision** — Takes a high-level goal and produces a Product Requirements Document (PRD)
-- **Discovery** — Refines an approved PRD into a Functional Specification Document (FSD)
-- **Decomposition** — Breaks an approved FSD into GitHub issues with acceptance criteria
-- **Acceptance** — Reviews PRs against the FSD: does this ship what was specified?
+- **Product Definition** — Takes a high-level goal and produces a Product Requirements Document (PRD)
+- **Acceptance** — Reviews PRs against the PRD: does this deliver what the product needs?
 
 **Architect** (`architect`) owns the *how* and *trade-offs*:
 
 - **Decision** — Captures architectural choices in Architecture Decision Records (ADRs)
-- **Specification** — Translates ADR decisions into Tier-2 technical specs (data models, APIs)
+- **Specification** — Translates ADR decisions into Tier-2 technical specs (FSDs with data models, APIs)
 - **Review** — Reviews PRs for structural compliance with architectural decisions
 
-**Tech Lead** (`tech-lead`) owns *implementation planning and epic decomposition*:
+**Tech Lead** (`tech-lead`) owns *execution planning*:
 
-- **Planning** — Breaks a PRD into implementation epics scoped for agent sessions
-- **Coordination** — Creates GitHub Issues for approved epics (optional coordination layer)
-- **Review** — Reviews PRs against epic acceptance criteria
+- Produces epics from the PRD, using FSDs and/or ADRs when available
+- Orders epics by dependency and identifies parallelizable work
 
 **Developer** (`developer`) owns *implementation and quality* *(planned)*:
 
-- Implementation against spec and ADR constraints
+- Implementation against FSD and ADR constraints
 - Test coverage and inner-loop feedback
 - PR response and iteration
 
@@ -53,25 +50,24 @@ Because skills are version-controlled, the team's process evolves with the code.
 Personas don't talk to each other directly — they collaborate through **shared artifacts**:
 
 ```
-Product Manager        Tech Lead           Architect              Developer
-      │                    │                    │                      │
-      ├─── PRD ──────────► │                    │                      │
-      ├─── FSD ────────────────────────────────► │                      │
-      │                    │ (reads PRD + FSD)   │                      │
-      │                    ├─── Epics ─────────────────────────────────►│
-      │                    │                    ├─── ADR ──────────────►│
-      │                    │                    ├─── Technical Spec ───►│
-      │                    │                    │                       │
-      │◄── PR (acceptance) │◄── PR (epic review)│◄── PR (structural)   │
+Product Manager        Architect            Tech Lead            Developer
+      │                    │                    │                    │
+      ├─── PRD ──────────► │                    │                    │
+      ├─── PRD ─────────────────────────────► │                    │
+      │                    ├─── FSD ──────────► │                    │
+      │                    ├─── ADR ──────────► │                    │
+      │                    │                    ├─── Epics ─────────►│
+      │                    │                    │                    │
+      │◄── PR (product)    │◄── PR (technical)  │                    │
 ```
 
-Each persona's skill defines its own review criteria, so a single PR can receive both an acceptance review (does it meet the spec?) and a structural review (does it follow the architecture?).
+Each persona's skill defines its own review criteria, so a single PR can receive both a product review (does it deliver what the PRD asks for?) and a technical review (does it follow the architecture?). The Tech Lead produces epics from the PRD, using FSDs and/or ADRs when available to add technical detail.
 
 ### Current Tooling
 
-Artifacts (PRDs, FSDs, ADRs) are tracked **in the repository** as markdown files under `specifications/`. Discussions happen in **GitHub PRs and Issues** — PRs for artifact review, issues for work items produced by decomposition.
+Artifacts (PRDs, FSDs, ADRs) are tracked **in the repository** as markdown files under `specifications/`. GitHub serves as an optional **coordination layer** for status tracking (PRs, labels) — not the source of truth for artifacts. Agents read specs from the repo, not from issue bodies.
 
-This is intentional: starting with repo + GitHub keeps everything version-controlled, auditable, and close to the code. Once the workflow is proven, artifacts and coordination can migrate to external tools (Jira, Confluence, etc.) without changing the underlying skill definitions — the skills define *what* to produce and *how* to review, not *where* to store it.
+This is intentional: keeping artifacts in the repo makes them version-controlled, auditable, and close to the code. The skills define *what* to produce and *how* to review, not *where* to coordinate — so the coordination layer (GitHub, Jira, etc.) can change without affecting the skill definitions.
 
 ## Sharing Skills Across Teams
 
@@ -111,13 +107,13 @@ The foundation. Each SDLC persona has a skill. Skills are version-controlled and
 
 **What it looks like in practice:**
 
-- A product manager invokes `/product-manager` to write an FSD from a goal
+- A product manager invokes `/product-manager` to write a PRD from a product goal
 - An architect invokes `/architect` to capture a decision as an ADR
 - Reviews happen through skill-defined templates, ensuring consistent evaluation criteria
 
 ### Level 2: Multi-Persona Workflows
 
-Personas are aware of each other's artifacts and constraints. The PM's FSD feeds the architect's technical spec, which constrains the developer's implementation.
+Personas are aware of each other's artifacts and constraints. The PM's PRD feeds the architect's FSDs and ADRs, which the Tech Lead breaks down into epics for the developer.
 
 **What you get:**
 
@@ -127,9 +123,10 @@ Personas are aware of each other's artifacts and constraints. The PM's FSD feeds
 
 **What it looks like in practice:**
 
-- The PM writes a PRD, refines it into an FSD, and decomposes it into issues
-- The architect creates ADRs for key decisions, referencing the FSD
-- The developer implements against both, and the PR receives reviews from both personas
+- The PM writes a PRD that defines the product vision and goals
+- The architect creates ADRs for key decisions and writes FSDs with technical specs
+- The Tech Lead produces epics from FSDs and/or ADRs, ordered by dependency
+- The developer implements against FSDs and ADRs, and the PR receives a product review (PM) and a technical review (architect)
 
 ### Level 3: Agents in Systems
 

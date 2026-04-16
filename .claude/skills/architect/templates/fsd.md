@@ -4,8 +4,7 @@
 **Date:** {{YYYY-MM-DD}}
 **Author:** Architect Agent
 **Parent PRD:** {{link to PRD}}
-**GitHub Issue:** #{{issue-number}}
-**ADR Dependencies:** #{{adr-numbers}}
+**ADR Dependencies:** {{adr-slugs}}
 
 ---
 
