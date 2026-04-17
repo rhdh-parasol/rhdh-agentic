@@ -79,11 +79,11 @@ The PRD suggests the architecture should allow future packaging as a Backstage C
 
 ### Negative
 
-- The standalone CLI must implement its own config loading and auth — it cannot reuse `@backstage/cli`'s config infrastructure
+- The standalone CLI must implement its own config loading — it cannot reuse `@backstage/cli`'s config infrastructure. Auth is reused via `CliAuth` from `@backstage/cli-node` (see [authentication ADR](backstage-agent-authentication.md)).
 
 ### Known Gaps
 
-- **G-1:** Authentication mechanism is not decided. The standalone CLI needs its own auth implementation (static tokens, OIDC, etc.). This is a separate ADR. Blocks: FSD for any command that requires auth.
+- **G-1:** ~~Authentication mechanism is not decided.~~ **Resolved** — see [authentication](backstage-agent-authentication.md). Decision: use `CliAuth` from `@backstage/cli-node` for token read/refresh, thin login command for standalone use.
 - **G-2:** ~~CLI backend transport (REST vs MCP Actions) is not decided.~~ **Resolved** — see [cli-backend-transport](backstage-agent-cli-backend-transport.md). Decision: REST APIs as primary transport, `@backstage/catalog-client` for catalog, transport abstraction for future MCP support.
 
 ## Alternatives Considered
