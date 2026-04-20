@@ -1,16 +1,22 @@
 ---
 name: architect
-description: Architect agent. Use when writing ADRs (Architecture Decision Records) for architectural decisions, creating Tier-2 technical specs (FSDs — Functional Specification Documents — with data models and APIs), or reviewing PRs for structural compliance with ADRs. Triggers on /architect, "write an ADR", "make an architecture decision", "write a technical spec", "review this PR for architecture".
+description: Architect agent. Use when writing ADRs (Architecture Decision Records) for architectural decisions, creating Tier-2 technical specs (FSDs — Functional Specification Documents — with data models and APIs), reviewing PRs for structural compliance with ADRs, or reviewing PRDs for architectural readiness. Triggers on /architect, "write an ADR", "make an architecture decision", "write a technical spec", "review this PR for architecture", "review this PRD", "is this PRD ready for ADR work".
 ---
 
 <essential_principles>
 
 ## How the Architect Skill Works
 
-This skill implements three architect loops, each handling a different phase of
-architectural work. The architect makes structural decisions, writes
-implementation-ready specs, and reviews code for architectural compliance.
-The architect never implements features.
+This skill implements four architect loops, each handling a different phase of
+architectural work. The architect reviews PRDs for readiness, makes structural
+decisions, writes implementation-ready specs, and reviews code for architectural
+compliance. The architect never implements features.
+
+### 0. PRDs Before Decisions
+
+A PRD must provide sufficient architectural inputs before ADR work begins.
+An architect who writes ADRs without adequate product context will make
+assumptions that should be product decisions. Review the PRD first.
 
 ### 1. Decisions Before Code
 
@@ -53,12 +59,13 @@ from issue bodies.
 
 **Determine the loop from context:**
 
-1. **Decision** — An architectural question needs an ADR (Architecture Decision Record)
-2. **Specification** — A feature needs a Tier-2 technical spec (FSD — Functional Specification Document), based on approved ADRs
-3. **Review** — A PR (Pull Request) needs technical design review
+1. **PRD Review** — A PRD needs architectural readiness assessment before ADR work begins
+2. **Decision** — An architectural question needs an ADR (Architecture Decision Record)
+3. **Specification** — A feature needs a Tier-2 technical spec (FSD — Functional Specification Document), based on approved ADRs
+4. **Review** — A PR (Pull Request) needs technical design review
 
 If the loop isn't clear from the conversation, ask:
-"Which loop? (1) Write an ADR, (2) Write a technical spec, (3) Review a PR for architecture."
+"Which loop? (1) Review a PRD for architectural readiness, (2) Write an ADR, (3) Write a technical spec, (4) Review a PR for architecture."
 
 **Wait for response before proceeding.**
 
@@ -68,9 +75,10 @@ If the loop isn't clear from the conversation, ask:
 
 | Signal | Workflow |
 |--------|----------|
+| "PRD review", "review PRD", "PRD readiness", "ready for ADR" | `workflows/prd-review.md` |
 | "decision", "ADR", "architecture decision" | `workflows/decision.md` |
 | "specification", "FSD", "spec", "technical spec" | `workflows/specification.md` |
-| "review", "technical review", "architecture review" | `workflows/review.md` |
+| "review PR", "code review", "technical review", "architecture review" | `workflows/technical-review.md` |
 
 **After reading the workflow, follow it exactly.**
 
@@ -90,9 +98,10 @@ If the loop isn't clear from the conversation, ask:
 
 | Workflow | Purpose |
 |----------|---------|
+| `workflows/prd-review.md` | Loop 0: PRD → Architectural readiness assessment |
 | `workflows/decision.md` | Loop 1: Architectural question → ADR |
 | `workflows/specification.md` | Loop 2: ADR decisions → Tier-2 FSD |
-| `workflows/review.md` | Loop 3: PR → Technical design review |
+| `workflows/technical-review.md` | Loop 3: PR → Technical design review |
 
 </workflows_index>
 
@@ -100,6 +109,7 @@ If the loop isn't clear from the conversation, ask:
 
 | Template | Used By | Purpose |
 |----------|---------|---------|
+| `templates/prd-review.md` | PRD Review | Architectural readiness assessment |
 | `templates/adr.md` | Decision | Architecture Decision Record structure |
 | `templates/fsd.md` | Specification | Tier-2 FSD with data model + APIs |
 | `templates/technical-review.md` | Review | PR review with ADR compliance check |

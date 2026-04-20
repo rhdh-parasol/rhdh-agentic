@@ -1,4 +1,4 @@
-# Workflow: Review — Technical Design Review
+# Workflow: Technical Review — PR Technical Design Review
 
 <required_reading>
 Read these files before proceeding:
