@@ -2,8 +2,8 @@
 
 **Date:** 2026-04-14
 **Author:** Architect Agent
-**Parent PRD:** [backstage-agent](../prd/backstage-agent.md)
-**Related ADRs:** [technology-stack-and-packaging](backstage-agent-technology-stack-and-packaging.md), [authentication](backstage-agent-authentication.md)
+**Parent PRD:** [backstage-agent](../../prd/backstage-agent.md)
+**Related ADRs:** [technology-stack-and-packaging](technology-stack-and-packaging.md), [authentication](authentication.md)
 **Blocking:** This ADR blocks FSD and epic planning for all pillar commands (catalog, TechDocs, templates). No pillar FSD can be written until this transport decision is made.
 
 ---

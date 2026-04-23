@@ -2,8 +2,8 @@
 
 **Date:** 2026-04-14
 **Author:** Architect Agent
-**Parent PRD:** [backstage-agent](../prd/backstage-agent.md)
-**Related ADRs:** [authentication](backstage-agent-authentication.md), [cli-backend-transport](backstage-agent-cli-backend-transport.md)
+**Parent PRD:** [backstage-agent](../../prd/backstage-agent.md)
+**Related ADRs:** [authentication](authentication.md), [cli-backend-transport](cli-backend-transport.md)
 
 ---
 
@@ -51,7 +51,7 @@ Use Commander.js for command parsing and help generation.
 
 ### D-3: Packaging — Standalone CLI
 
-Ship as a standalone npm package (`backstage-agent`) with its own binary entry point. The CLI does NOT depend on `@backstage/cli` or `@backstage/cli-node` at runtime.
+Ship as a standalone npm package (`backstage-agent`) with its own binary entry point. The CLI does NOT depend on `@backstage/cli` at runtime. It does depend on `@backstage/cli-node` (for `CliAuth`, see [authentication ADR](authentication.md)) and `@backstage/catalog-client` (see [cli-backend-transport ADR](cli-backend-transport.md)) — these are published npm packages that work without a Backstage project context.
 
 ```
 backstage-agent/
@@ -79,12 +79,13 @@ The PRD suggests the architecture should allow future packaging as a Backstage C
 
 ### Negative
 
-- The standalone CLI must implement its own config loading — it cannot reuse `@backstage/cli`'s config infrastructure. Auth is reused via `CliAuth` from `@backstage/cli-node` (see [authentication ADR](backstage-agent-authentication.md)).
+- The standalone CLI must implement its own config loading — it cannot reuse `@backstage/cli`'s config infrastructure. Auth is reused via `CliAuth` from `@backstage/cli-node` (see [authentication ADR](authentication.md)).
 
 ### Known Gaps
 
-- **G-1:** ~~Authentication mechanism is not decided.~~ **Resolved** — see [authentication](backstage-agent-authentication.md). Decision: use `CliAuth` from `@backstage/cli-node` for token read/refresh, thin login command for standalone use.
-- **G-2:** ~~CLI backend transport (REST vs MCP Actions) is not decided.~~ **Resolved** — see [cli-backend-transport](backstage-agent-cli-backend-transport.md). Decision: REST APIs as primary transport, `@backstage/catalog-client` for catalog, transport abstraction for future MCP support.
+- **G-1:** ~~Authentication mechanism is not decided.~~ **Resolved** — see [authentication](authentication.md). Decision: use `CliAuth` from `@backstage/cli-node` for token read/refresh, thin login command for standalone use.
+- **G-2:** ~~CLI backend transport (REST vs MCP Actions) is not decided.~~ **Resolved** — see [cli-backend-transport](cli-backend-transport.md). Decision: REST APIs as primary transport, `@backstage/catalog-client` for catalog, transport abstraction for future MCP support.
+- **G-3:** Config loading is not addressed by any ADR. The standalone CLI needs to resolve configuration (backend URL, default output format, active instance, etc.) independently from `@backstage/cli`'s config infrastructure. The CLI Foundation FSD resolves this implicitly — the CLI uses flags, env vars, and `CliAuth`'s stored instance rather than a config file.
 
 ## Alternatives Considered
 
@@ -141,3 +142,4 @@ Use Salesforce's oclif framework instead of Commander.js. Provides plugin system
 |------|--------|---------|
 | 2026-04-14 | Architect Agent | Initial decision |
 | 2026-04-15 | Tomas Kral | Drop module-compatible architecture from D-3 — speculative future-proofing that contradicts primary use case |
+| 2026-04-20 | Tomas Kral | Fix D-3 runtime dependency claim — CLI depends on `@backstage/cli-node` and `@backstage/catalog-client`. Add G-3 for config loading. |

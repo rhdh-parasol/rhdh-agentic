@@ -2,8 +2,8 @@
 
 **Date:** 2026-04-14
 **Author:** Architect Agent
-**Parent PRD:** [backstage-agent](../prd/backstage-agent.md)
-**Related ADRs:** [technology-stack-and-packaging](backstage-agent-technology-stack-and-packaging.md), [cli-backend-transport](backstage-agent-cli-backend-transport.md)
+**Parent PRD:** [backstage-agent](../../prd/backstage-agent.md)
+**Related ADRs:** [technology-stack-and-packaging](technology-stack-and-packaging.md), [cli-backend-transport](cli-backend-transport.md)
 
 ---
 
@@ -38,7 +38,7 @@ The OAuth PKCE flow itself is standard and does not need to be reimplemented fro
 
 **Key constraint from PRD:** The CLI is designed for agent consumption — non-interactive, no stdin prompts. The OAuth browser flow requires human interaction for the `login` step. This is acceptable: login is a one-time setup step. All subsequent commands use stored tokens with automatic refresh.
 
-ADR dependency: `specifications/adr/backstage-agent-technology-stack-and-packaging.md` (D-1: TypeScript, D-3: standalone CLI)
+ADR dependency: [technology-stack-and-packaging](technology-stack-and-packaging.md) (D-1: TypeScript, D-3: standalone CLI)
 
 ## Decision
 
@@ -64,10 +64,10 @@ The PKCE flow and token exchange use a standard OAuth library (e.g., `oauth4weba
 
 1. Fetch client metadata from `{backendUrl}/api/auth/.well-known/oauth-client/cli.json`
 2. Run OAuth Authorization Code + PKCE flow via library (verifier, challenge, authorize URL, token exchange)
-3. Start local HTTP callback server, open browser (or print URL with `--no-browser`)
+3. Start local HTTP callback server, open browser to authorize URL
 4. Write tokens to `~/.config/backstage-cli/auth-instances.yaml` and secrets to `~/.local/share/backstage-cli/auth-secrets/` — same paths and format as backstage-cli (reference: upstream [`storage.ts`](https://github.com/backstage/backstage/blob/master/packages/cli-module-auth/src/lib/storage.ts))
 
-**`--non-interactive` mode:** For SSH sessions, remote machines, or environments where a local callback server cannot run:
+**`--no-browser` mode:** For SSH sessions, remote machines, or environments where a local callback server cannot run:
 
 1. Steps 1–2 same as above (fetch client metadata, generate PKCE challenge)
 2. Print the full authorization URL to stdout — no browser opened, no local server started
@@ -75,9 +75,9 @@ The PKCE flow and token exchange use a standard OAuth library (e.g., `oauth4weba
 4. After authenticating, the browser redirects to `http://localhost:.../callback?code=...` — the page won't load (no server), but the URL contains the auth code
 5. User copies the callback URL from the browser address bar and pastes it into the CLI prompt
 6. CLI extracts the authorization code from the pasted URL and exchanges it for tokens
-7. Step 6 same as above (write tokens to backstage-cli storage)
+7. Step 4 same as above (write tokens to backstage-cli storage)
 
-This is the same pattern used by `gcloud auth login --no-launch-browser`. It allows login from any environment that has a terminal, even without a local display or network access to localhost.
+This is the same pattern used by `gcloud auth login --no-launch-browser`. It allows login from any environment that has a terminal, even without a local display or network access to localhost. There is a single `--no-browser` flag (not two separate flags) that switches between both login modes.
 
 **Login caveat:** Both login modes are interactive — they require a human to authenticate in a browser. This is a one-time setup step. Once authenticated, all subsequent CLI operations are fully non-interactive, using stored tokens with automatic refresh. Unlike `backstage-cli auth login`, the backstage-agent version skips the interactive instance-picker prompts and uses a `--backend-url` flag instead.
 
@@ -177,3 +177,4 @@ Two proposals that would reduce backstage-agent's custom auth code to near-zero:
 |------|--------|---------|
 | 2026-04-14 | Architect Agent | Initial decision |
 | 2026-04-17 | Architect Agent | Revised D-1/D-2: use `CliAuth` from `@backstage/cli-node` instead of reimplementing auth. Addresses review feedback from @durandom. |
+| 2026-04-20 | Tomas Kral | Consolidate `--non-interactive` and `--no-browser` into single `--no-browser` flag. |
