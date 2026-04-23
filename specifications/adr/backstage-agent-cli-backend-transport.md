@@ -17,11 +17,13 @@ The backstage-agent CLI needs to communicate with Backstage to access catalog en
 Two transport options exist in the Backstage ecosystem:
 
 **Backstage REST APIs** — Traditional HTTP endpoints per plugin:
+
 - **Catalog:** `/api/catalog/entities`, `/entities/by-query`, etc. OpenAPI 3.1 spec. Published npm client `@backstage/catalog-client` (v1.14+, stable). Constructor requires only a `discoveryApi` (`{ getBaseUrl(pluginId): Promise<string> }`) and optional `fetchApi` — trivially implementable standalone.
 - **Scaffolder:** `/api/scaffolder/v2/tasks`, `/v2/actions`, `/v2/templates/*/parameter-schema`, etc. OpenAPI 3.1 spec. No published npm client.
 - **TechDocs:** `/api/techdocs/metadata/*`, `/api/techdocs/sync/*`. Limited surface. No published npm client.
 
 **MCP Actions** (RFC [#30218](https://github.com/backstage/backstage/issues/30218)) — Model Context Protocol tools registered via `ActionsRegistryService`:
+
 - Transport: Streamable HTTP (bidirectional streaming over `POST /api/mcp-actions/v1`)
 - 11 tools available (5 catalog, 5 scaffolder, 1 auth)
 - Client: `@modelcontextprotocol/sdk` (v1.25+) — generic MCP client, not Backstage-specific
@@ -29,6 +31,7 @@ Two transport options exist in the Backstage ecosystem:
 - SSE transport exists but is deprecated and marked for removal
 
 **Dependency analysis of `@backstage/catalog-client`:**
+
 ```
 @backstage/catalog-client (common-library, published to npm)
 ├── @backstage/catalog-model (common-library) → types, validators
@@ -41,6 +44,7 @@ Two transport options exist in the Backstage ecosystem:
 ├── lodash
 └── uri-template
 ```
+
 All dependencies are published npm packages with `common-library` role. No backend infrastructure, no plugin system, no Backstage app context required.
 
 **Key PRD constraint:** The CLI is an intent layer above both REST and MCP — "one CLI command may aggregate multiple API calls." The transport is an implementation detail, not a user-facing concern.
@@ -52,6 +56,7 @@ All dependencies are published npm packages with `common-library` role. No backe
 Use Backstage REST APIs as the primary transport for all pillar commands. Every command talks to Backstage via HTTP REST endpoints.
 
 **Rationale:**
+
 - Catalog REST API is stable and production-proven (v1.14+)
 - Scaffolder and TechDocs REST APIs have OpenAPI 3.1 specs — contract is well-defined
 - Every Backstage instance exposes REST APIs by default — no additional plugin installation required
@@ -82,6 +87,7 @@ For scaffolder and TechDocs, use direct HTTP calls (no published client exists).
 Do not implement MCP Actions transport in the initial release. Revisit when MCP Actions plugin reaches v1.0 and is available by default in Backstage distributions.
 
 **Rationale:** MCP Actions is pre-release (v0.1.12-next), requires an additional plugin to be installed on the Backstage instance, and the transport protocol (Streamable HTTP vs SSE) is still evolving. Adding MCP support now would mean:
+
 - Requiring users to install the `mcp-actions` plugin before using the CLI
 - Depending on a pre-release API that may change
 - Implementing MCP client protocol for minimal gain (the same data is available via stable REST APIs)
@@ -142,6 +148,7 @@ Commands import the service interface, not the implementation. The entry point w
 Use MCP protocol (`@modelcontextprotocol/sdk`) for all commands. Connect to `POST /api/mcp-actions/v1` and use tool calls for catalog/scaffolder/TechDocs operations.
 
 **Pros:**
+
 - Aligns with MCP ecosystem direction — future-proof if MCP becomes the standard Backstage API layer
 - Single transport protocol for all pillars
 - Streaming support for long-running operations (scaffolder tasks)
@@ -153,6 +160,7 @@ Use MCP protocol (`@modelcontextprotocol/sdk`) for all commands. Connect to `POS
 Implement both REST and MCP transport from the start. Auto-detect MCP availability and prefer it when available, fall back to REST.
 
 **Pros:**
+
 - Works everywhere (REST fallback) while leveraging MCP where available
 - No future migration needed — both paths exist from the start
 
@@ -163,6 +171,7 @@ Implement both REST and MCP transport from the start. Auto-detect MCP availabili
 Call all Backstage REST endpoints directly with fetch. No Backstage npm dependencies.
 
 **Pros:**
+
 - Zero Backstage dependency footprint — fully standalone
 - Complete control over types, error handling, and HTTP behavior
 

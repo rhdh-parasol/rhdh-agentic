@@ -123,6 +123,7 @@ Write credentials to `~/.config/backstage-cli/` and `~/.local/share/backstage-cl
 Store credentials in `~/.config/backstage-agent/` instead of `~/.config/backstage-cli/`. Implement own token refresh logic.
 
 **Pros:**
+
 - No coupling to backstage-cli storage paths
 - Full control over storage format
 
@@ -133,6 +134,7 @@ Store credentials in `~/.config/backstage-agent/` instead of `~/.config/backstag
 Import auth logic directly from `@backstage/cli-module-auth`.
 
 **Pros:**
+
 - No code duplication — use upstream auth implementation directly
 - Automatic upstream bug fixes and protocol updates
 
@@ -143,6 +145,7 @@ Import auth logic directly from `@backstage/cli-module-auth`.
 Support only pre-provisioned tokens via `BACKSTAGE_TOKEN` environment variable or `--token` flag. No OAuth flow, no browser, fully non-interactive.
 
 **Pros:**
+
 - Fully non-interactive — no human login step required
 - Simplest implementation — no OAuth flow, no token refresh, no credential storage
 
@@ -153,6 +156,7 @@ Support only pre-provisioned tokens via `BACKSTAGE_TOKEN` environment variable o
 Depend entirely on `backstage-cli auth login` for authentication. backstage-agent only reads credentials via `CliAuth` — no login command at all.
 
 **Pros:**
+
 - Zero auth implementation — backstage-agent is purely a credential consumer
 - No duplicated login code
 

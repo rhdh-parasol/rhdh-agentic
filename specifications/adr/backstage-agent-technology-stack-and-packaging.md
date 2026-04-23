@@ -93,6 +93,7 @@ The PRD suggests the architecture should allow future packaging as a Backstage C
 Build the CLI as a Go binary (like `gh`, `kubectl`). Single-binary distribution, fast startup, cross-platform compilation.
 
 **Pros:**
+
 - Single binary — no Node.js runtime dependency
 - Fast cold start (~10ms vs ~200ms for Node.js)
 - Established pattern for developer CLIs (`gh`, `kubectl`, `terraform`)
@@ -104,6 +105,7 @@ Build the CLI as a Go binary (like `gh`, `kubectl`). Single-binary distribution,
 Ship exclusively as `@backstage/cli-module-agent`, loaded by `@backstage/cli`.
 
 **Pros:**
+
 - Native integration — commands appear alongside `backstage-cli build`, `backstage-cli test`, etc.
 - Inherits `@backstage/cli` config loading, auth, and plugin discovery
 - Single package, no adapter needed
@@ -115,6 +117,7 @@ Ship exclusively as `@backstage/cli-module-agent`, loaded by `@backstage/cli`.
 Ship standalone but design the internal command architecture to be wrappable as a `@backstage/cli-module-agent` in the future — portable `Command` objects, a separate adapter package, and a command contract that satisfies both entry points.
 
 **Pros:**
+
 - Preserves the upstream CLI module integration path without coupling to it now
 - If the module system evolves to support standalone use, the adapter is straightforward
 
@@ -125,6 +128,7 @@ Ship standalone but design the internal command architecture to be wrappable as 
 Use Salesforce's oclif framework instead of Commander.js. Provides plugin system, auto-generated help, structured output.
 
 **Pros:**
+
 - Built-in plugin architecture for extensibility
 - Auto-generated help and man pages
 - Structured JSON output support out of the box
