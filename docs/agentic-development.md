@@ -69,6 +69,24 @@ Artifacts (PRDs, FSDs, ADRs) are tracked **in the repository** as markdown files
 
 This is intentional: keeping artifacts in the repo makes them version-controlled, auditable, and close to the code. The skills define *what* to produce and *how* to review, not *where* to coordinate — so the coordination layer (GitHub, Jira, etc.) can change without affecting the skill definitions.
 
+### PR Review & Merge Workflow
+
+Pull requests are the primary coordination point between humans and agents. The project uses a set of conventions designed for agentic collaboration:
+
+**Review routing** — The GitHub **Reviewers** field is used to request reviews. The **Assignee** field is not used for review routing. Draft PRs do not trigger reviews — use drafts for work-in-progress that isn't ready for feedback.
+
+**Multi-perspective review** — A single PR can receive reviews from multiple agent personas, each evaluating from its own angle:
+
+- **Product Manager** — Does this PR deliver what the PRD asks for? (acceptance against PRD goals)
+- **Architect** — Does the implementation comply with ADR decisions and structural constraints? (technical review)
+- **Tech Lead** — Does this PR satisfy the epic's acceptance criteria? (implementation completeness)
+
+Each persona has its own review workflow and verdict template, so review criteria are consistent and auditable.
+
+**No self-merging** — Every PR requires review from another team member. Even when both parties use AI agents to assist, the human on the other side makes the approve/reject decision.
+
+**Auto-merge** — A GitHub Actions workflow enables auto-merge (squash) on every non-draft PR targeting `main`. The PR does not merge immediately — GitHub waits for branch protection conditions (green checks + approval) before merging. This removes the manual "click merge" step and lets the team focus on review quality rather than merge logistics.
+
 ## Sharing Skills Across Teams
 
 Skills are portable. A team that develops effective agent workflows can share them at three levels:
