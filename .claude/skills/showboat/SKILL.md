@@ -7,7 +7,7 @@ description: Convention for building a reproducible demo artifact co-located wit
 
 ## Scope
 
-This skill encodes **spellkave-local conventions** for Showboat. It is
+This skill encodes **repo-local conventions** for Showboat. It is
 self-contained — it does not depend on any external recipe skill.
 
 ### What Showboat Is
