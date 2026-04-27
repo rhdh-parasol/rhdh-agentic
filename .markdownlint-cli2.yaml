@@ -5,3 +5,4 @@
 ignores:
   - "meetings/transcripts/**"
   - "meetings/agenda.md"
+  - ".claude/commands/opsx/**"

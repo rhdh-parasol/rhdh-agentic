@@ -1,0 +1,20 @@
+schema: rhdh-spec-driven
+
+context: |
+  Domain: Red Hat Developer Hub (RHDH) — enterprise Backstage distribution
+  Tech stack: TypeScript, React, Node.js (Backstage framework)
+  We use conventional commits
+
+  Existing specifications (read for context, do NOT modify directly):
+    PRDs: specifications/prd/
+    ADRs: specifications/adr/
+
+rules:
+  proposal:
+    - Keep proposals under 500 words
+    - Always include a "Non-goals" section
+    - Reference existing PRDs in specifications/prd/ when relevant
+  tasks:
+    - Break tasks into chunks of max 2 hours
+  design:
+    - Reference existing ADRs in specifications/adr/ for prior decisions
