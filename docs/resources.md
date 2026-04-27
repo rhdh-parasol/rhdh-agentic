@@ -4,13 +4,13 @@ Existing codebases, tools, and content relevant to this project.
 
 ## Backstage Upstream
 
-| Resource                                                                             | Description                                                                                                                                                        |
-|--------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [Backstage MCP Actions](https://github.com/backstage/backstage/issues/30218)         | RFC #30218 — 11 merged tools (5 catalog, 5 scaffolder, 1 auth) provide the mechanism layer the CLI builds on                                                       |
-| [TechDocs MCP Actions](https://github.com/backstage/backstage/pull/33412)            | PR #33412 — `get-techdocs-metadata`, `get-techdocs-content` (in progress)                                                                                          |
-| [BEP-0013 AI Skills](https://github.com/backstage/backstage/pull/33173)              | Shared AI skills for Backstage development (orthogonal — coding *on* Backstage, not *using* it)                                                                    |
-| [MCP Catalog Modeling](https://github.com/backstage/backstage/issues/32062)          | RFC #32062 — `kind: API, type: mcp-server` modeling pattern                                                                                                        |
-| [Model Server Catalog Modeling](https://github.com/backstage/backstage/issues/33060) | RFC #33060 — `kind: API, type: mcp-server` modeling pattern, build off of MCP RFC; additional use of `kind: Resource` and `kind: Component` proposed / asked about |
+| Resource                                                                             | Description                                                                                                                                                                              |
+|--------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [Backstage MCP Actions](https://github.com/backstage/backstage/issues/30218)         | RFC #30218 — 11 merged tools (5 catalog, 5 scaffolder, 1 auth) provide the mechanism layer the CLI builds on                                                                             |
+| [TechDocs MCP Actions](https://github.com/backstage/backstage/pull/33412)            | PR #33412 — `get-techdocs-metadata`, `get-techdocs-content` (in progress)                                                                                                                |
+| [BEP-0013 AI Skills](https://github.com/backstage/backstage/pull/33173)              | Shared AI skills for Backstage development (orthogonal — coding *on* Backstage, not *using* it)                                                                                          |
+| [MCP Catalog Modeling](https://github.com/backstage/backstage/issues/32062)          | RFC #32062 — `kind: API, type: mcp-server` modeling pattern                                                                                                                              |
+| [Model Server Catalog Modeling](https://github.com/backstage/backstage/issues/33060) | RFC #33060 — `kind: API, type: ai-model-server` modeling pattern, based off of MCP Catalog Modeling RFC; additional use of `kind: Resource` and `kind: Component` proposed / asked about |
 
 ## Enterprise Catalog Content
 
@@ -23,8 +23,8 @@ Existing codebases, tools, and content relevant to this project.
 
 ## RHDH Templates
 
-| Resource | Description |
-|----------|-------------|
+| Resource | Description                                                            |
+|----------|------------------------------------------------------------------------|
 | [red-hat-developer-hub-software-templates](https://github.com/redhat-developer/red-hat-developer-hub-software-templates) | RHDH-specific templates: ArgoCD, Quarkus, Spring Boot, Tekton, Ansible |
 | [backstage/software-templates](https://github.com/backstage/software-templates) | Official upstream templates: React, Spring Boot, Rails, etc.           |
-| [red-hat-developer-hub-openshift-ai-software-templates](https://github.com/redhat-ai-dev/ai-lab-template) | RHDH-specific templates: ArgoCD,Tekton, KServe, KubeFlow, LlamaStack   |
+| [red-hat-developer-hub-openshift-ai-software-templates](https://github.com/redhat-ai-dev/ai-lab-template) | RHDH-specific templates: ArgoCD, Tekton, KServe, KubeFlow, LlamaStack  |
