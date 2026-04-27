@@ -34,6 +34,8 @@ This project serves a dual purpose. It provides tooling for agents to interact w
 
 We use this project to develop and validate **agentic SDLC practices** in an enterprise context: each SDLC persona (product manager, architect, developer) is backed by a dedicated agent skill, version-controlled alongside the code. Skills and patterns proven here are designed to be adopted by other teams building on RHDH and Backstage.
 
+We use **[OpenSpec](https://openspec.dev/)** to manage changes through a structured artifact workflow (proposal → specs → design → tasks). Run `/opsx:onboard` to walk through a complete cycle.
+
 See **[Agentic Development](docs/agentic-development.md)** for the full walkthrough.
 
 ## Upstream Alignment
