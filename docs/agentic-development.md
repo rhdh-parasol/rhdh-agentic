@@ -87,6 +87,22 @@ Each persona has its own review workflow and verdict template, so review criteri
 
 **Auto-merge** — A GitHub Actions workflow enables auto-merge (squash) on every non-draft PR targeting `main`. The PR does not merge immediately — GitHub waits for branch protection conditions (green checks + approval) before merging. This removes the manual "click merge" step and lets the team focus on review quality rather than merge logistics.
 
+### OpenSpec for Change Management
+
+We use **[OpenSpec](https://openspec.dev/)** to manage changes through a structured artifact workflow. Each change lives in `openspec/changes/<name>/` and progresses through a defined sequence: proposal → specs → design → tasks → implementation → archive.
+
+OpenSpec complements the persona skills above — personas define *who* does the work and *how* they review it, while OpenSpec defines *the lifecycle* of a change from idea to completion.
+
+**Key commands:**
+
+| Command | What it does |
+|---|---|
+| `/opsx:onboard` | Guided walkthrough of a complete workflow cycle |
+| `/opsx:new` | Start a new change, step through artifacts one at a time |
+| `/opsx:apply` | Implement tasks from a change |
+| `/opsx:archive` | Archive a completed change |
+
+Run `/opsx:onboard` to learn the workflow by doing it on a real task in the codebase.
 ## Sharing Skills Across Teams
 
 Skills are portable. A team that develops effective agent workflows can share them at three levels:
