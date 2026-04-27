@@ -14,7 +14,10 @@ rules:
     - Keep proposals under 500 words
     - Always include a "Non-goals" section
     - Reference existing PRDs in specifications/prd/ when relevant
+  specs:
+    - Every long-lived capability under `openspec/specs/<capability>/` SHALL ship with a sibling `demo.md`. New capability spec files MUST be paired with a corresponding demo.md task in the tasks artifact created with the showboat skill.
   tasks:
     - Break tasks into chunks of max 2 hours
+    - When the change adds or materially edits a long-lived spec under `openspec/specs/<capability>/spec.md`, the FINAL task in the checklist MUST be to create or update the sibling `openspec/specs/<capability>/demo.md` with a concrete worked example or scenario walkthrough created with the showboat skill.
   design:
     - Reference existing ADRs in specifications/adr/ for prior decisions

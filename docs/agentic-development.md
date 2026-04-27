@@ -103,6 +103,7 @@ OpenSpec complements the persona skills above — personas define *who* does the
 | `/opsx:archive` | Archive a completed change |
 
 Run `/opsx:onboard` to learn the workflow by doing it on a real task in the codebase.
+
 ## Sharing Skills Across Teams
 
 Skills are portable. A team that develops effective agent workflows can share them at three levels:
