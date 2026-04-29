@@ -70,12 +70,26 @@ Groups map to capabilities:
 Every command supports:
 
 - `--output json|text` (default: `json`)
-- `--backend-url <url>` (override, otherwise from stored auth)
+- `--instance <name>` (override selected instance, otherwise uses the instance marked `selected: true`)
 - `--help` (full contract: signature, output schema, trust level, examples)
 
 **Rationale:** Verb-noun pattern matches `gh` CLI and is predictable for agents discovering commands via `--help`. Grouping by pillar maps directly to the Backstage domain model.
 
-### D-3: Output Contract — Structured Envelope
+### D-3: Pagination — Explicit Flags, No Auto-Pagination
+
+Commands that return collections (`catalog list`, `catalog search`, `techdocs search`) support `--limit <n>` and `--offset <n>` flags. The CLI does not paginate automatically — the agent decides how much data to fetch per call. Responses include a `totalCount` field so agents can determine whether more results exist.
+
+```json
+{
+  "data": { "entities": [...], "totalCount": 142 },
+  "hints": ["Try: backstage-agent catalog list --limit 10 --offset 10"],
+  "trustLevel": "read-only"
+}
+```
+
+**Rationale:** Auto-pagination hides result set size from agents, making it hard to control cost and latency. Explicit flags give agents full control. `totalCount` enables agents to decide whether to fetch more without guessing.
+
+### D-4: Output Contract — Structured Envelope
 
 All commands return a consistent JSON envelope:
 
@@ -89,7 +103,10 @@ All commands return a consistent JSON envelope:
 
 - `data`: command-specific payload
 - `hints`: array of next-step suggestions (what to run next)
-- `trustLevel`: one of `read-only`, `reversible`, `destructive`, `external`
+- `trustLevel` — informational metadata that tells agents how to treat the operation (e.g., whether to request human approval). The CLI does not gate or restrict commands based on trust level; it is up to the consuming agent framework to decide how to act on this signal. Values:
+  - `read-only`: retrieves data without modifying any state (e.g., `catalog list`, `techdocs read`)
+  - `reversible`: modifies state but the change can be undone (e.g., updating entity annotations)
+  - `destructive`: creates or modifies state that is difficult or impossible to undo (e.g., `templates execute` scaffolds a new component)
 
 Errors use a parallel structure:
 
@@ -104,13 +121,23 @@ Exit codes: `0` success, `1` runtime error, `2` usage error. Non-zero exits alwa
 
 **Rationale:** Agents parse JSON output programmatically. The envelope gives them structured next-step guidance and trust classification without parsing prose. The PRD calls these out explicitly as agent-native design principles.
 
-### D-4: Auth Integration — Delegated to CliAuth
+### D-5: Multi-Instance Support
 
-Per the [authentication ADR](../../../specifications/adr/backstage-agent/authentication.md), all commands obtain tokens via `CliAuth.create()` → `auth.getAccessToken()`. The `auth login` command handles the one-time OAuth setup. Commands that need a backend URL resolve it from `--backend-url` flag → `CliAuth` stored instance.
+The credential storage at `~/.config/backstage-cli/auth-instances.yaml` supports multiple Backstage instances. Each instance entry has a `name` (derived from the backend URL hostname by default), `baseUrl`, credentials, and a `selected` flag. Exactly one instance is marked `selected: true` — this is the active instance used by default.
+
+`auth login --backend-url <url>` adds (or updates) an instance and marks it as selected. The `--backend-url` flag is specific to `auth login` — all other commands resolve the backend URL from the stored instance. The global `--instance <name>` flag allows any command to target a specific stored instance instead of the selected one.
+
+Resolution order: `--instance <name>` flag → selected instance from storage → error with hint to run `auth login`.
+
+**Rationale:** Enterprise environments often have multiple Backstage instances (dev, staging, production). The multi-instance model is inherited from backstage-cli's existing storage format — `CliAuth` already supports instance selection via `instanceName` option. Agents targeting a specific instance can use `--instance` without re-authenticating.
+
+### D-6: Auth Integration — Delegated to CliAuth
+
+Per the [authentication ADR](../../../specifications/adr/backstage-agent/authentication.md), all commands obtain tokens via `CliAuth.create()` → `auth.getAccessToken()`. The `auth login` command handles the one-time OAuth setup.
 
 No custom token management code. The `lib/auth.ts` module provides a thin wrapper that creates the authenticated fetch function used by all service implementations.
 
-### D-5: Help as Protocol Contract
+### D-7: Help as Protocol Contract
 
 `--help` output for each command includes:
 
@@ -133,9 +160,3 @@ This is the agent's primary discovery mechanism — agents read `--help` cold to
 **[Trade-off] Single package vs monorepo** → Single package means lib/ changes ship with command changes (no independent versioning of the transport layer). Acceptable for a focused CLI; revisit if the tool grows significantly.
 
 **[Trade-off] JSON-first output** → Human readability is secondary. Users who want human-readable output must pass `--output text`. This is intentional — the PRD is explicit that the primary consumer is agents.
-
-## Open Questions
-
-- **Config loading**: How does the CLI resolve `--backend-url` default when not passed and no stored auth instance exists? The tech stack ADR notes this as gap G-3. Likely: require `--backend-url` on first use, store it during `auth login`.
-- **Pagination**: Catalog queries can return large result sets. Should the CLI paginate automatically or expose `--limit`/`--offset` flags? Likely: expose flags, let the agent decide.
-- **Template execution confirmation**: Template execution is a `destructive` trust-level operation that creates resources. Should it require an explicit `--confirm` flag? PRD says non-interactive, but the trust model suggests gating.

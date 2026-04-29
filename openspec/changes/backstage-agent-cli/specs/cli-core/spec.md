@@ -2,7 +2,7 @@
 
 ### Requirement: Structured JSON output envelope
 
-All commands SHALL return a consistent JSON envelope on stdout containing a `data` field with the command-specific payload, a `hints` array with next-step command suggestions, and a `trustLevel` string classifying the operation as `read-only`, `reversible`, `destructive`, or `external`.
+All commands SHALL return a consistent JSON envelope on stdout containing a `data` field with the command-specific payload, a `hints` array with next-step command suggestions, and a `trustLevel` string classifying the operation as `read-only`, `reversible`, or `destructive`.
 
 #### Scenario: Successful command returns envelope
 
@@ -62,7 +62,7 @@ Every command output SHALL include a `hints` array containing at least one sugge
 
 ### Requirement: Trust level classification
 
-Every command SHALL declare its trust level in the output envelope. Trust levels are: `read-only` (no side effects), `reversible` (side effects that can be undone), `destructive` (irreversible side effects), `external` (calls external systems).
+Every command SHALL declare its trust level in the output envelope. Trust levels are: `read-only` (no side effects), `reversible` (side effects that can be undone), `destructive` (irreversible side effects).
 
 #### Scenario: Read commands are classified as read-only
 
@@ -90,17 +90,30 @@ Every command's `--help` output SHALL include the command signature, all flags w
 
 ### Requirement: Global flags
 
-The CLI SHALL support `--backend-url <url>` to override the Backstage backend URL and `--output json|text` to control output format. These flags SHALL be available on every command.
+The CLI SHALL support `--instance <name>` to select a stored auth instance by name and `--output json|text` to control output format. These flags SHALL be available on every command.
 
-#### Scenario: Backend URL override
+#### Scenario: Instance selection by name
 
-- **WHEN** a command is invoked with `--backend-url https://backstage.example.com`
-- **THEN** the command uses that URL instead of the stored auth instance URL
+- **WHEN** a command is invoked with `--instance staging`
+- **THEN** the command uses the backend URL and credentials from the stored instance named `staging`
 
-#### Scenario: Backend URL from stored auth
+#### Scenario: Default to selected instance
 
-- **WHEN** a command is invoked without `--backend-url` and a stored auth instance exists
-- **THEN** the command uses the stored instance URL
+- **WHEN** a command is invoked without `--instance`
+- **THEN** the command uses the instance marked `selected: true` in the credential storage
+
+#### Scenario: No instance available
+
+- **WHEN** a command is invoked without `--instance` and no stored auth instance exists
+- **THEN** the CLI exits with code `1`
+- **AND** the `hints` array suggests `backstage-agent auth login --backend-url <url>`
+
+#### Scenario: Unknown instance name
+
+- **WHEN** a command is invoked with `--instance nonexistent` and no stored instance has that name
+- **THEN** the CLI exits with code `1`
+- **AND** the error envelope lists available instance names
+- **AND** `hints` suggests `backstage-agent auth status` to see configured instances
 
 ### Requirement: Non-interactive operation
 
