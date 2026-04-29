@@ -1,0 +1,98 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: parasol-python-service
+  title: Parasol Python Service
+  description: |
+    Scaffold a new Python service for Parasol Insurance data-oriented domains.
+    Use for Data & Analytics, ML pipelines, and actuarial workloads. Produces
+    a FastAPI project with health checks, Prometheus metrics, OpenTelemetry
+    tracing, and a valid catalog-info.yaml.
+  tags:
+    - python
+    - fastapi
+    - rest
+    - parasol
+    - data
+spec:
+  owner: group:default/parasol-platform-engineering
+  type: service
+
+  parameters:
+    - title: Service Information
+      required:
+        - name
+        - description
+        - owner
+        - system
+      properties:
+        name:
+          title: Service Name
+          type: string
+          description: Unique service name in kebab-case (e.g., ml-feature-store)
+          pattern: "^[a-z][a-z0-9-]*$"
+          ui:autofocus: true
+        description:
+          title: Description
+          type: string
+          description: What does this service do?
+        owner:
+          title: Owner
+          type: string
+          description: The team that owns this service
+          ui:field: EntityPicker
+          ui:options:
+            catalogFilter:
+              kind: [Group]
+        system:
+          title: System
+          type: string
+          description: The Parasol system this service belongs to
+          ui:field: EntityPicker
+          ui:options:
+            catalogFilter:
+              kind: [System]
+
+    - title: Python Configuration
+      properties:
+        pythonVersion:
+          title: Python Version
+          type: string
+          default: "3.12"
+          enum: ["3.11", "3.12", "3.13"]
+          description: Python runtime version
+        port:
+          title: Port
+          type: number
+          default: 8000
+          description: HTTP port for the service
+
+  steps:
+    - id: template
+      name: Fetch Service Skeleton
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{ parameters.name }}
+          description: ${{ parameters.description }}
+          pythonVersion: ${{ parameters.pythonVersion }}
+          port: ${{ parameters.port }}
+
+    - id: catalogTemplate
+      name: Fetch Catalog Info
+      action: fetch:template
+      input:
+        url: ../skeletons/catalog-info/
+        values:
+          name: ${{ parameters.name }}
+          description: ${{ parameters.description }}
+          owner: ${{ parameters.owner }}
+          system: ${{ parameters.system }}
+          stack: python
+
+  output:
+    links:
+      - title: Service Skeleton
+        icon: catalog
+        entityRef: ${{ steps.catalogTemplate.output.entityRef }}

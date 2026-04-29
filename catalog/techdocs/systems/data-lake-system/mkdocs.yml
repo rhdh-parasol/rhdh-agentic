@@ -1,0 +1,11 @@
+site_name: "Parasol Data Lake System"
+site_description: "Architecture decisions and technical documentation for the Data Lake System"
+
+plugins:
+  - techdocs-core
+
+nav:
+  - Home: index.md
+  - Architecture Decision Records:
+      - Overview: adrs/index.md
+      - "ADR-001: Kafka-First Ingestion": adrs/001-kafka-first-ingestion.md

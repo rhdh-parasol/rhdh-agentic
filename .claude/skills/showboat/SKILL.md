@@ -120,11 +120,57 @@ If any is missing, stop and request it. Do not start a demo against stale code.
 
 </success_criteria>
 
+<companion_tools>
+
+## Companion Tools: Chartroom and Rodney
+
+Showboat is part of a three-tool ecosystem. All three are designed for agents
+to operate independently — run `--help` on each, do not memorize flags.
+
+### Rodney — Browser Automation
+
+`uvx rodney` captures screenshots of web UIs via headless Chrome. Use Rodney
+when a demo needs visual proof from a browser-based interface (e.g., Backstage
+entity pages, TechDocs rendering, template parameter forms).
+
+Composition: Rodney saves screenshots as PNG files → embed them with
+`showboat image <file> <path>`.
+
+Typical flow:
+
+1. `rodney start` — launch headless Chrome session
+2. `rodney goto <url>` — navigate to the page
+3. `rodney screenshot <output.png>` — capture the current state
+4. `showboat image <demo.md> <output.png>` — embed in the demo
+5. `rodney stop` — end the session
+
+### Chartroom — Data Visualization
+
+`uvx chartroom` converts tabular data (CSV, TSV, JSON, SQL) into PNG charts.
+Use Chartroom when a demo needs to visualize metrics, distributions, or
+comparisons as bar, line, scatter, or histogram charts.
+
+Composition: Chartroom generates PNG files → embed them with
+`showboat image <file> <path>`.
+
+### When to Use Which
+
+| Need | Tool |
+|------|------|
+| Capture CLI command output | `showboat exec` |
+| Capture web UI screenshot | Rodney → `showboat image` |
+| Visualize data as a chart | Chartroom → `showboat image` |
+| Add narrative text | `showboat note` |
+
+</companion_tools>
+
 <references_index>
 
 | Reference | Purpose |
 |-----------|---------|
 | `showboat --help` | Authoritative CLI reference — run it, do not memorize flags |
+| `rodney --help` | Browser automation CLI — headless Chrome screenshots for visual proof |
+| `chartroom --help` | Chart generation CLI — tabular data to PNG visualizations |
 | Host project's observability contract | The structured-output surface demos ride on — the host skill identifies the specific document |
 | Host skill's implementation workflow | Where demo construction is sequenced — the host skill identifies the specific step |
 

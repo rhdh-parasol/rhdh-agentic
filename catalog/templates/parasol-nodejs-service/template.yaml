@@ -1,0 +1,99 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: parasol-nodejs-service
+  title: Parasol Node.js Service
+  description: |
+    Scaffold a new Node.js service for Parasol Insurance digital channels.
+    Use for BFF (Backend-for-Frontend) services, push notification handlers,
+    real-time messaging, and broker portal APIs. Produces an Express.js project
+    with health checks, Prometheus metrics, OpenTelemetry tracing, and a valid
+    catalog-info.yaml.
+  tags:
+    - nodejs
+    - express
+    - rest
+    - parasol
+    - bff
+spec:
+  owner: group:default/parasol-platform-engineering
+  type: service
+
+  parameters:
+    - title: Service Information
+      required:
+        - name
+        - description
+        - owner
+        - system
+      properties:
+        name:
+          title: Service Name
+          type: string
+          description: Unique service name in kebab-case (e.g., web-portal-bff)
+          pattern: "^[a-z][a-z0-9-]*$"
+          ui:autofocus: true
+        description:
+          title: Description
+          type: string
+          description: What does this service do?
+        owner:
+          title: Owner
+          type: string
+          description: The team that owns this service
+          ui:field: EntityPicker
+          ui:options:
+            catalogFilter:
+              kind: [Group]
+        system:
+          title: System
+          type: string
+          description: The Parasol system this service belongs to
+          ui:field: EntityPicker
+          ui:options:
+            catalogFilter:
+              kind: [System]
+
+    - title: Node.js Configuration
+      properties:
+        nodeVersion:
+          title: Node.js Version
+          type: string
+          default: "22"
+          enum: ["20", "22"]
+          description: Node.js LTS runtime version
+        port:
+          title: Port
+          type: number
+          default: 3000
+          description: HTTP port for the service
+
+  steps:
+    - id: template
+      name: Fetch Service Skeleton
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{ parameters.name }}
+          description: ${{ parameters.description }}
+          nodeVersion: ${{ parameters.nodeVersion }}
+          port: ${{ parameters.port }}
+
+    - id: catalogTemplate
+      name: Fetch Catalog Info
+      action: fetch:template
+      input:
+        url: ../skeletons/catalog-info/
+        values:
+          name: ${{ parameters.name }}
+          description: ${{ parameters.description }}
+          owner: ${{ parameters.owner }}
+          system: ${{ parameters.system }}
+          stack: nodejs
+
+  output:
+    links:
+      - title: Service Skeleton
+        icon: catalog
+        entityRef: ${{ steps.catalogTemplate.output.entityRef }}

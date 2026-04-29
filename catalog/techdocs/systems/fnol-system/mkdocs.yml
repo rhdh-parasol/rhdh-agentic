@@ -1,0 +1,12 @@
+site_name: "Parasol Fnol System"
+site_description: "Architecture decisions and technical documentation for the Fnol System"
+
+plugins:
+  - techdocs-core
+
+nav:
+  - Home: index.md
+  - Architecture Decision Records:
+      - Overview: adrs/index.md
+      - "ADR-001: Channel Normalization": adrs/001-channel-normalization.md
+      - "ADR-002: Triage Rules Engine": adrs/002-triage-rules-engine.md
