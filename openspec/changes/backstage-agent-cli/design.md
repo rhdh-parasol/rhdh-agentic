@@ -66,6 +66,7 @@ Groups map to capabilities:
 - `backstage-agent techdocs search|read`
 - `backstage-agent templates list|get|execute`
 - `backstage-agent auth login|status|logout`
+- `backstage-agent config set-trust-policy`
 
 Every command supports:
 
@@ -103,7 +104,7 @@ All commands return a consistent JSON envelope:
 
 - `data`: command-specific payload
 - `hints`: array of next-step suggestions (what to run next)
-- `trustLevel` — informational metadata that tells agents how to treat the operation (e.g., whether to request human approval). The CLI does not gate or restrict commands based on trust level; it is up to the consuming agent framework to decide how to act on this signal. Values:
+- `trustLevel` — metadata that tells agents how to treat the operation. Also used by the trust policy (D-8) to gate command execution. Values:
   - `read-only`: retrieves data without modifying any state (e.g., `catalog list`, `techdocs read`)
   - `reversible`: modifies state but the change can be undone (e.g., updating entity annotations)
   - `destructive`: creates or modifies state that is difficult or impossible to undo (e.g., `templates execute` scaffolds a new component)
@@ -148,6 +149,30 @@ No custom token management code. The `lib/auth.ts` module provides a thin wrappe
 - Related commands (cross-references)
 
 This is the agent's primary discovery mechanism — agents read `--help` cold to understand what the CLI can do. Commander.js supports custom help formatting to inject trust levels and examples beyond the default flag listing.
+
+### D-8: Trust Policy — Config-Based Command Gating
+
+The CLI enforces a configurable trust policy that gates command execution based on trust level. The policy defines the maximum trust level allowed — commands exceeding it are blocked before execution.
+
+Policy values (each level includes all levels below it):
+
+- `read-only` — only read-only commands allowed
+- `reversible` — read-only + reversible commands allowed
+- `all` — everything allowed (default)
+
+The trust policy is stored in `~/.config/backstage-agent/config.yaml` and managed through two entry points:
+
+- `backstage-agent config set-trust-policy <level>` — change the policy at any time
+- `backstage-agent auth login --backend-url <url> --trust-policy <level>` — set the policy during initial setup
+
+```yaml
+# ~/.config/backstage-agent/config.yaml
+trustPolicy: read-only
+```
+
+When a command is blocked, the CLI exits with a `TRUST_POLICY_VIOLATION` error envelope explaining which trust level is required and what the current policy allows.
+
+**Rationale:** The PRD requires destructive operations to be "gated behind explicit opt-in or policy/config enablement." Making the policy a persistent config rather than a per-invocation flag or env var prevents agents from escalating their own privileges. Only a deliberate `config set-trust-policy` or `auth login --trust-policy` call changes the policy. The config file at `~/.config/backstage-agent/` gives backstage-agent its own config home, separate from backstage-cli's credential storage.
 
 ## Risks / Trade-offs
 

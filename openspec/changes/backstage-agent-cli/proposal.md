@@ -24,10 +24,15 @@ AI coding agents produce code without organizational context — they guess at t
 ### New Capabilities
 
 - `cli-core`: Core CLI framework — command routing, structured output (JSON/human-readable), help-as-contract system, error handling with recovery hints, next-step suggestions, and trust-level classification
-- `auth`: Authentication and connection management — connecting to Backstage instances, token handling, session management, and RBAC-aware access
-- `catalog`: Software Catalog access — discovering and inspecting components, services, APIs, resources, and their relationships; filtering and searching entities
-- `techdocs`: TechDocs access — searching and reading organizational documentation, ADRs, standards, and compliance requirements
-- `templates`: Software Templates access — listing available scaffolding templates, inspecting template parameters, and executing templates to create new components
+- `auth`: Authentication and connection management — connecting to Backstage instances, token handling, multi-instance support, and RBAC-aware access
+
+### Future Capabilities
+
+Pillar commands to be added in subsequent changes after cli-core and auth are implemented:
+
+- **Catalog** — discover and inspect components, services, APIs, and their relationships
+- **TechDocs** — search and read organizational documentation, standards, and ADRs
+- **Templates** — list, inspect, and execute scaffolding templates
 
 ### Modified Capabilities
 

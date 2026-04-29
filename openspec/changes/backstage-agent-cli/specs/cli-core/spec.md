@@ -74,6 +74,39 @@ Every command SHALL declare its trust level in the output envelope. Trust levels
 - **WHEN** `backstage-agent templates execute` executes
 - **THEN** the `trustLevel` field is `destructive`
 
+### Requirement: Trust policy enforcement
+
+The CLI SHALL enforce a configurable trust policy that gates command execution based on trust level. The policy defines the maximum trust level allowed: `read-only`, `reversible`, or `all` (default). Commands whose trust level exceeds the policy SHALL be blocked before execution. The policy is stored in `~/.config/backstage-agent/config.yaml` and can only be changed via `backstage-agent config set-trust-policy <level>` or `backstage-agent auth login --trust-policy <level>`.
+
+#### Scenario: Policy blocks destructive command
+
+- **WHEN** the trust policy is set to `read-only`
+- **AND** a user runs `backstage-agent templates execute`
+- **THEN** the CLI exits with code `1`
+- **AND** the error envelope contains `code: "TRUST_POLICY_VIOLATION"` with a message explaining the required trust level and current policy
+
+#### Scenario: Policy allows matching trust level
+
+- **WHEN** the trust policy is set to `reversible`
+- **AND** a user runs a command with trust level `read-only`
+- **THEN** the command executes normally
+
+#### Scenario: Set trust policy via config command
+
+- **WHEN** a user runs `backstage-agent config set-trust-policy read-only`
+- **THEN** `~/.config/backstage-agent/config.yaml` is updated with `trustPolicy: read-only`
+- **AND** the output envelope confirms the new policy
+
+#### Scenario: Set trust policy during login
+
+- **WHEN** a user runs `backstage-agent auth login --backend-url https://example.com --trust-policy read-only`
+- **THEN** authentication completes and the trust policy is set to `read-only`
+
+#### Scenario: Default policy is all
+
+- **WHEN** no trust policy has been configured
+- **THEN** all commands are allowed regardless of trust level
+
 ### Requirement: Help as protocol contract
 
 Every command's `--help` output SHALL include the command signature, all flags with descriptions, output format description, trust level, example invocations, and related commands.

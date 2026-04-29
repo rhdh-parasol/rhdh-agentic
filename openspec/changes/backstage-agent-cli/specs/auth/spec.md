@@ -17,6 +17,11 @@ The CLI SHALL provide `backstage-agent auth login --backend-url <url>` that auth
 - **WHEN** a user runs `backstage-agent auth login --backend-url https://backstage.example.com --instance production`
 - **THEN** the instance is stored with the name `production` instead of the derived hostname
 
+#### Scenario: Login with trust policy
+
+- **WHEN** a user runs `backstage-agent auth login --backend-url https://backstage.example.com --trust-policy read-only`
+- **THEN** authentication completes and `~/.config/backstage-agent/config.yaml` is updated with `trustPolicy: read-only`
+
 #### Scenario: Login to unreachable backend
 
 - **WHEN** a user runs `backstage-agent auth login --backend-url https://unreachable.example.com`
