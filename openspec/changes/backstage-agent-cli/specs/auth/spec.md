@@ -22,6 +22,13 @@ The CLI SHALL provide `backstage-agent auth login --backend-url <url>` that auth
 - **WHEN** a user runs `backstage-agent auth login --backend-url https://backstage.example.com --trust-policy read-only`
 - **THEN** authentication completes and `~/.config/backstage-agent/config.yaml` is updated with `trustPolicy: read-only`
 
+#### Scenario: Re-login to existing instance
+
+- **WHEN** a user runs `backstage-agent auth login --backend-url https://backstage.example.com`
+- **AND** an instance for `backstage.example.com` already exists in credential storage
+- **THEN** the existing instance's credentials are updated with new tokens
+- **AND** the instance remains marked as `selected: true`
+
 #### Scenario: Login to unreachable backend
 
 - **WHEN** a user runs `backstage-agent auth login --backend-url https://unreachable.example.com`
@@ -55,8 +62,9 @@ The CLI SHALL provide `backstage-agent auth status` that displays all configured
 #### Scenario: No credentials stored
 
 - **WHEN** a user runs `backstage-agent auth status` with no stored credentials
-- **THEN** the command exits with code `1`
-- **AND** the `hints` array suggests `backstage-agent auth login --backend-url <url>`
+- **THEN** the output envelope `data.instances` is an empty array
+- **AND** `hints` suggests `backstage-agent auth login --backend-url <url>`
+- **AND** exit code is `0`
 
 ### Requirement: Auth select
 
@@ -100,8 +108,17 @@ The CLI SHALL provide `backstage-agent auth logout` that removes stored credenti
 #### Scenario: Logout specific instance
 
 - **WHEN** a user runs `backstage-agent auth logout --instance staging`
+- **AND** `staging` is not the selected instance
 - **THEN** credentials for the `staging` instance are removed from storage
-- **AND** the selected instance remains unchanged (unless it was the one removed)
+- **AND** the selected instance remains unchanged
+
+#### Scenario: Logout selected instance when other instances exist
+
+- **WHEN** a user runs `backstage-agent auth logout`
+- **AND** the selected instance is removed
+- **AND** other instances remain in storage
+- **THEN** no instance is marked as `selected: true`
+- **AND** `hints` suggests `backstage-agent auth select <name>` to select an instance
 
 ### Requirement: Shared credential storage
 
@@ -116,6 +133,24 @@ The CLI SHALL store and read credentials using the same paths and format as back
 
 - **WHEN** a command executes with an expired access token and a valid refresh token
 - **THEN** `CliAuth` automatically refreshes the token before making the API call
+
+### Requirement: Auth status trust level
+
+The `auth status` command SHALL be classified as trust level `read-only` because it only reads stored credential metadata without modifying any state.
+
+#### Scenario: Status trust level in help
+
+- **WHEN** a user runs `backstage-agent auth status --help`
+- **THEN** the help output includes `Trust level: read-only`
+
+### Requirement: Auth logout trust level
+
+The `auth logout` command SHALL be classified as trust level `reversible` because it removes credentials that can be restored by running `auth login` again.
+
+#### Scenario: Logout trust level in help
+
+- **WHEN** a user runs `backstage-agent auth logout --help`
+- **THEN** the help output includes `Trust level: reversible`
 
 ### Requirement: Auth login trust level
 

@@ -15,18 +15,18 @@
 
 - [ ] 3.1 Implement config file reader/writer for `~/.config/backstage-agent/config.yaml` with `trustPolicy` field (values: `read-only`, `reversible`, `all`; default: `all`)
 - [ ] 3.2 Implement trust level comparison logic: given a command's trust level and the configured policy, determine whether execution is allowed (each policy level includes all levels below it)
-- [ ] 3.3 Implement trust policy enforcement as a pre-execution check that blocks commands exceeding the policy and emits a `TRUST_POLICY_VIOLATION` error envelope
+- [ ] 3.3 Implement trust policy enforcement as a pre-execution check that blocks commands exceeding the policy and emits a `TRUST_POLICY_VIOLATION` error envelope. Exempt `config set-trust-policy` and all `auth` commands from enforcement (they manage CLI state, not Backstage state)
 - [ ] 3.4 Implement `backstage-agent config set-trust-policy <level>` command that updates the config file and returns a confirmation envelope
 
 ## 4. Auth Module
 
 - [ ] 4.1 Implement `src/lib/auth.ts` wrapping `CliAuth` from `@backstage/cli-node` — expose `getAuthenticatedFetch(instanceName?)` that creates a `CliAuth` instance, calls `getAccessToken()`, and returns a fetch function with the Bearer token
 - [ ] 4.2 Implement instance resolution logic: `--instance <name>` flag → selected instance from `~/.config/backstage-cli/auth-instances.yaml` → error with hint to run `auth login`
-- [ ] 4.3 Implement `backstage-agent auth login --backend-url <url>` command: derive instance name from hostname (or accept `--instance`), invoke CliAuth OAuth PKCE flow, store credentials, mark instance as selected, optionally set trust policy via `--trust-policy <level>`
+- [ ] 4.3 Implement `backstage-agent auth login --backend-url <url>` command: derive instance name from hostname (or accept `--instance`), run OAuth 2.0 Authorization Code + PKCE flow using `oauth4webapi` (CliAuth does not expose a login method — only token read/refresh), write credentials to backstage-cli storage paths, mark instance as selected, update existing instance on re-login, optionally set trust policy via `--trust-policy <level>`. Declare trust level: `reversible`
 - [ ] 4.4 Implement `backstage-agent auth login --no-browser` mode: print authorization URL to stdout, accept pasted callback URL
-- [ ] 4.5 Implement `backstage-agent auth status` command: list all stored instances with name, backendUrl, tokenExpiresAt, and selected flag
-- [ ] 4.6 Implement `backstage-agent auth select <name>` command: switch the selected instance by flipping `selected: true` in credential storage without re-authenticating
-- [ ] 4.7 Implement `backstage-agent auth logout` command: remove credentials for selected instance (or `--instance <name>` if specified)
+- [ ] 4.5 Implement `backstage-agent auth status` command: list all stored instances with name, backendUrl, tokenExpiresAt, and selected flag. Return success envelope with empty `instances` array (not an error) when no credentials are stored. Declare trust level: `read-only`
+- [ ] 4.6 Implement `backstage-agent auth select <name>` command: switch the selected instance by flipping `selected: true` in credential storage without re-authenticating. Declare trust level: `reversible`
+- [ ] 4.7 Implement `backstage-agent auth logout` command: remove credentials for selected instance (or `--instance <name>` if specified). When the selected instance is removed and other instances remain, clear the `selected` flag (require `auth select` before next command). Declare trust level: `reversible`
 
 ## 5. CLI Core Integration
 
@@ -35,6 +35,8 @@
 - [ ] 5.3 Register `auth` and `config` command groups on the root program
 - [ ] 5.4 Wire trust policy enforcement into Commander's hook system so every command is checked before execution
 - [ ] 5.5 Wire the non-interactive constraint: override Commander's error handling so missing arguments exit with code `2` and an error envelope instead of prompting
+- [ ] 5.6 Implement no-arg status summary: when `backstage-agent` is invoked with no arguments, return a success envelope containing the current auth instance (or `null`), active trust policy, list of available command groups with descriptions, and next-step hints
+- [ ] 5.7 Implement dry-run framework: add `--dry-run`/`--no-dry-run` flag support to the command framework. Destructive commands default to dry-run (require `--no-dry-run` to execute). Reversible commands support opt-in `--dry-run`. Read-only commands ignore the flag. Dry-run output includes `dryRun: true` in the success envelope. Trust policy enforcement runs before dry-run evaluation
 
 ## 6. Testing
 
@@ -42,7 +44,9 @@
 - [ ] 6.2 Unit tests for trust policy: verify comparison logic (read-only < reversible < all), enforcement blocks correctly, and TRUST_POLICY_VIOLATION envelope format
 - [ ] 6.3 Unit tests for config file management: read/write/default behavior for `config.yaml`
 - [ ] 6.4 Unit tests for instance resolution: flag override, selected instance fallback, missing instance error
-- [ ] 6.5 Unit tests for auth commands: login stores credentials and marks selected, status lists instances, logout removes credentials (mock CliAuth)
+- [ ] 6.5 Unit tests for auth commands: login stores credentials and marks selected, status lists instances, select switches instance, logout removes credentials (mock CliAuth)
+- [ ] 6.6 Unit tests for no-arg status summary: verify envelope structure with authenticated instance, with no instance configured, and hint content
+- [ ] 6.7 Unit tests for dry-run framework: verify destructive commands default to dry-run (use stub command — no real destructive command in initial scope), reversible commands support opt-in dry-run, read-only commands ignore the flag, trust policy blocks before dry-run evaluation, `dryRun: true` field present in dry-run responses and omitted in normal responses
 
 ## 7. Capability Demos
 

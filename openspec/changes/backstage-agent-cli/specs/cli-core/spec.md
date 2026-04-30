@@ -110,7 +110,7 @@ Every command SHALL declare its trust level in the output envelope. Trust levels
 
 ### Requirement: Trust policy enforcement
 
-The CLI SHALL enforce a configurable trust policy that gates command execution based on trust level. The policy defines the maximum trust level allowed: `read-only`, `reversible`, or `all` (default). Commands whose trust level exceeds the policy SHALL be blocked before execution. The policy is stored in `~/.config/backstage-agent/config.yaml` and can only be changed via `backstage-agent config set-trust-policy <level>` or `backstage-agent auth login --trust-policy <level>`.
+The CLI SHALL enforce a configurable trust policy that gates command execution based on trust level. The policy defines the maximum trust level allowed: `read-only`, `reversible`, or `all` (default). Commands whose trust level exceeds the policy SHALL be blocked before execution. The `config set-trust-policy` command and all `auth` commands (`auth login`, `auth status`, `auth select`, `auth logout`) are exempt from trust policy enforcement — they SHALL execute regardless of the current policy. `config set-trust-policy` is exempt to prevent self-lock. Auth commands are exempt because they manage CLI credentials, not Backstage state — blocking `auth login` under a `read-only` policy would prevent authentication to new instances. The policy is stored in `~/.config/backstage-agent/config.yaml` and can only be changed via `backstage-agent config set-trust-policy <level>` or `backstage-agent auth login --trust-policy <level>`.
 
 #### Scenario: Policy blocks destructive command
 
@@ -141,6 +141,24 @@ The CLI SHALL enforce a configurable trust policy that gates command execution b
 
 - **WHEN** no trust policy has been configured
 - **THEN** all commands are allowed regardless of trust level
+
+#### Scenario: Invalid trust policy level
+
+- **WHEN** a user runs `backstage-agent config set-trust-policy bogus`
+- **THEN** the CLI exits with code `2`
+- **AND** the error envelope contains `code: "USAGE_ERROR"` with a message listing valid levels (`read-only`, `reversible`, `all`)
+
+#### Scenario: Set trust policy is exempt from enforcement
+
+- **WHEN** the trust policy is set to `read-only`
+- **AND** a user runs `backstage-agent config set-trust-policy reversible`
+- **THEN** the command executes successfully and updates the policy to `reversible`
+
+#### Scenario: Auth commands are exempt from enforcement
+
+- **WHEN** the trust policy is set to `read-only`
+- **AND** a user runs `backstage-agent auth login --backend-url https://example.com`
+- **THEN** the command executes normally (not blocked by trust policy)
 
 ### Requirement: Help as protocol contract
 
@@ -185,7 +203,7 @@ The CLI SHALL support `--instance <name>` to select a stored auth instance by na
 
 ### Requirement: Dry-run preview for state-changing commands
 
-Commands with trust level `destructive` SHALL default to dry-run mode, returning a preview of the operation without executing it. The `--no-dry-run` flag SHALL be required to actually execute destructive commands. Commands with trust level `reversible` SHALL support an opt-in `--dry-run` flag to preview the operation. Dry-run output SHALL use the standard success envelope with an additional `dryRun: true` field.
+Commands with trust level `destructive` SHALL default to dry-run mode, returning a preview of the operation without executing it. The `--no-dry-run` flag SHALL be required to actually execute destructive commands. Commands with trust level `reversible` SHALL support an opt-in `--dry-run` flag to preview the operation. Dry-run output SHALL use the standard success envelope with an additional `dryRun: true` field. The `dryRun` field SHALL be omitted from the envelope when the command executes normally (not in dry-run mode).
 
 #### Scenario: Destructive command defaults to dry-run
 

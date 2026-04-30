@@ -134,6 +134,8 @@ All commands return a consistent JSON envelope:
   - `reversible`: modifies state but the change can be undone (e.g., updating entity annotations)
   - `destructive`: creates or modifies state that is difficult or impossible to undo (e.g., `templates execute` scaffolds a new component)
 
+The PRD also mentions an `external` trust level for operations with external side effects (e.g., sending notifications, posting to external services). No commands in the initial scope have external side effects, so `external` is deferred. It can be added when pillar commands introduce external interactions without changing the existing three levels.
+
 Errors use a parallel structure:
 
 ```json
@@ -198,6 +200,8 @@ trustPolicy: read-only
 When a command is blocked, the CLI exits with a `TRUST_POLICY_VIOLATION` error envelope explaining which trust level is required and what the current policy allows.
 
 **Rationale:** The PRD requires destructive operations to be "gated behind explicit opt-in or policy/config enablement." Making the policy a persistent config rather than a per-invocation flag or env var prevents agents from escalating their own privileges. Only a deliberate `config set-trust-policy` or `auth login --trust-policy` call changes the policy. The config file at `~/.config/backstage-agent/` gives backstage-agent its own config home, separate from backstage-cli's credential storage.
+
+`config set-trust-policy` and all `auth` commands are exempt from trust policy enforcement — they execute regardless of the current policy. Without the `config set-trust-policy` exemption, setting the policy to `read-only` would lock the user out. Auth commands are exempt because they manage CLI credentials, not Backstage state — blocking `auth login` under a `read-only` policy would prevent authentication to new instances, and blocking `auth logout` would prevent credential cleanup.
 
 ### D-9: Dry-Run Preview for State-Changing Commands
 
