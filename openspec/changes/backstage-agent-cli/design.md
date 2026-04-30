@@ -65,7 +65,7 @@ Groups map to capabilities:
 - `backstage-agent catalog list|get|search`
 - `backstage-agent techdocs search|read`
 - `backstage-agent templates list|get|execute`
-- `backstage-agent auth login|status|logout`
+- `backstage-agent auth login|status|select|logout`
 - `backstage-agent config set-trust-policy`
 
 Every command supports:
@@ -150,7 +150,7 @@ Exit codes: `0` success, `1` runtime error, `2` usage error. Non-zero exits alwa
 
 The credential storage at `~/.config/backstage-cli/auth-instances.yaml` supports multiple Backstage instances. Each instance entry has a `name` (derived from the backend URL hostname by default), `baseUrl`, credentials, and a `selected` flag. Exactly one instance is marked `selected: true` — this is the active instance used by default.
 
-`auth login --backend-url <url>` adds (or updates) an instance and marks it as selected. The `--backend-url` flag is specific to `auth login` — all other commands resolve the backend URL from the stored instance. The global `--instance <name>` flag allows any command to target a specific stored instance instead of the selected one.
+`auth login --backend-url <url>` adds (or updates) an instance and marks it as selected. `auth select <name>` switches the selected instance without re-authenticating — it flips the `selected: true` flag in the credential storage. The `--backend-url` flag is specific to `auth login` — all other commands resolve the backend URL from the stored instance. The global `--instance <name>` flag allows any command to target a specific stored instance instead of the selected one.
 
 Resolution order: `--instance <name>` flag → selected instance from storage → error with hint to run `auth login`.
 

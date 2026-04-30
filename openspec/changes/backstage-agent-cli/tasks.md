@@ -25,7 +25,8 @@
 - [ ] 4.3 Implement `backstage-agent auth login --backend-url <url>` command: derive instance name from hostname (or accept `--instance`), invoke CliAuth OAuth PKCE flow, store credentials, mark instance as selected, optionally set trust policy via `--trust-policy <level>`
 - [ ] 4.4 Implement `backstage-agent auth login --no-browser` mode: print authorization URL to stdout, accept pasted callback URL
 - [ ] 4.5 Implement `backstage-agent auth status` command: list all stored instances with name, backendUrl, tokenExpiresAt, and selected flag
-- [ ] 4.6 Implement `backstage-agent auth logout` command: remove credentials for selected instance (or `--instance <name>` if specified)
+- [ ] 4.6 Implement `backstage-agent auth select <name>` command: switch the selected instance by flipping `selected: true` in credential storage without re-authenticating
+- [ ] 4.7 Implement `backstage-agent auth logout` command: remove credentials for selected instance (or `--instance <name>` if specified)
 
 ## 5. CLI Core Integration
 

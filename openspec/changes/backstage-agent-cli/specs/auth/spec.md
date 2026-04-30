@@ -58,6 +58,35 @@ The CLI SHALL provide `backstage-agent auth status` that displays all configured
 - **THEN** the command exits with code `1`
 - **AND** the `hints` array suggests `backstage-agent auth login --backend-url <url>`
 
+### Requirement: Auth select
+
+The CLI SHALL provide `backstage-agent auth select <name>` that switches the selected instance by setting `selected: true` on the named instance in the credential storage. No re-authentication is performed.
+
+#### Scenario: Select existing instance
+
+- **WHEN** a user runs `backstage-agent auth select staging`
+- **AND** an instance named `staging` exists in the credential storage
+- **THEN** the `staging` instance is marked as `selected: true`
+- **AND** the previously selected instance is marked as `selected: false`
+- **AND** the output envelope confirms the newly selected instance
+
+#### Scenario: Select unknown instance
+
+- **WHEN** a user runs `backstage-agent auth select nonexistent`
+- **AND** no instance named `nonexistent` exists in the credential storage
+- **THEN** the CLI exits with code `1`
+- **AND** the error envelope lists available instance names
+- **AND** `hints` suggests `backstage-agent auth status`
+
+### Requirement: Auth select trust level
+
+The `auth select` command SHALL be classified as trust level `reversible` because it modifies the selected instance flag which can be changed back.
+
+#### Scenario: Select trust level in help
+
+- **WHEN** a user runs `backstage-agent auth select --help`
+- **THEN** the help output includes `Trust level: reversible`
+
 ### Requirement: Auth logout
 
 The CLI SHALL provide `backstage-agent auth logout` that removes stored credentials for the selected instance. An optional `--instance <name>` flag SHALL allow logging out a specific instance.
