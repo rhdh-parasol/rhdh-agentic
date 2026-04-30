@@ -148,6 +148,45 @@ The CLI SHALL support `--instance <name>` to select a stored auth instance by na
 - **AND** the error envelope lists available instance names
 - **AND** `hints` suggests `backstage-agent auth status` to see configured instances
 
+### Requirement: Dry-run preview for state-changing commands
+
+Commands with trust level `destructive` SHALL default to dry-run mode, returning a preview of the operation without executing it. The `--no-dry-run` flag SHALL be required to actually execute destructive commands. Commands with trust level `reversible` SHALL support an opt-in `--dry-run` flag to preview the operation. Dry-run output SHALL use the standard success envelope with an additional `dryRun: true` field.
+
+#### Scenario: Destructive command defaults to dry-run
+
+- **WHEN** a destructive command is invoked without `--no-dry-run`
+- **THEN** the command returns a success envelope with `dryRun: true` and a preview of the operation in `data`
+- **AND** no state is modified
+- **AND** `hints` includes the command with `--no-dry-run` to execute
+
+#### Scenario: Destructive command executes with --no-dry-run
+
+- **WHEN** a destructive command is invoked with `--no-dry-run`
+- **THEN** the command executes normally and returns the standard success envelope without `dryRun`
+
+#### Scenario: Reversible command with --dry-run
+
+- **WHEN** a reversible command is invoked with `--dry-run`
+- **THEN** the command returns a success envelope with `dryRun: true` and a preview of the operation in `data`
+- **AND** no state is modified
+
+#### Scenario: Reversible command executes by default
+
+- **WHEN** a reversible command is invoked without `--dry-run`
+- **THEN** the command executes normally
+
+#### Scenario: Dry-run blocked by trust policy
+
+- **WHEN** a destructive command is invoked (with or without `--no-dry-run`)
+- **AND** the trust policy does not allow the command's trust level
+- **THEN** the CLI exits with a `TRUST_POLICY_VIOLATION` error
+- **AND** no preview is shown
+
+#### Scenario: Read-only command ignores --dry-run
+
+- **WHEN** a read-only command is invoked with `--dry-run`
+- **THEN** the command executes normally (flag is ignored)
+
 ### Requirement: Non-interactive operation
 
 The CLI SHALL NOT prompt for stdin input during any command execution. All input MUST be provided via flags and arguments.

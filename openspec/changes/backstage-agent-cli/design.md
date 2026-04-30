@@ -174,6 +174,29 @@ When a command is blocked, the CLI exits with a `TRUST_POLICY_VIOLATION` error e
 
 **Rationale:** The PRD requires destructive operations to be "gated behind explicit opt-in or policy/config enablement." Making the policy a persistent config rather than a per-invocation flag or env var prevents agents from escalating their own privileges. Only a deliberate `config set-trust-policy` or `auth login --trust-policy` call changes the policy. The config file at `~/.config/backstage-agent/` gives backstage-agent its own config home, separate from backstage-cli's credential storage.
 
+### D-9: Dry-Run Preview for State-Changing Commands
+
+Commands with side effects support a `--dry-run` flag that returns a preview of what the command *would* do without actually executing it. The dry-run default varies by trust level:
+
+- **`destructive`** commands default to dry-run mode (`--dry-run` is on). The command shows a preview and exits. Pass `--no-dry-run` to actually execute. This fulfills the PRD's "explicit opt-in" requirement for destructive operations.
+- **`reversible`** commands execute normally by default. Pass `--dry-run` to preview instead of executing.
+- **`read-only`** commands have no side effects — `--dry-run` is ignored.
+
+Dry-run output uses the standard success envelope (D-4) with an additional `dryRun: true` field:
+
+```json
+{
+  "data": { "preview": { ... } },
+  "hints": ["To execute: backstage-agent templates execute <ref> --no-dry-run"],
+  "trustLevel": "destructive",
+  "dryRun": true
+}
+```
+
+Trust policy enforcement (D-8) runs *before* dry-run evaluation — if the policy blocks the command, it is blocked even in dry-run mode.
+
+**Rationale:** The PRD requires destructive operations to be "gated behind explicit opt-in or policy/config enablement." D-8 (trust policy) provides policy/config enablement. D-9 provides explicit opt-in — destructive commands won't execute unless the agent explicitly passes `--no-dry-run`, demonstrating intent. For reversible commands, dry-run is available but opt-in to avoid unnecessary friction. Commander.js supports negatable boolean options (`--dry-run` / `--no-dry-run`) natively.
+
 ## Risks / Trade-offs
 
 **[Risk] `@backstage/cli-node` CliAuth API changes** → Pin to a known-good version range. CliAuth is marked `@public`, so breaking changes follow semver. Monitor upstream releases.
