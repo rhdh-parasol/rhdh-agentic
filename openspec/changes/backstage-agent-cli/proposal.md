@@ -40,7 +40,7 @@ _None — this is a new tool with no existing specs to modify._
 
 ## Impact
 
-- **New package**: standalone CLI binary (technology stack TBD in design phase — could be TypeScript/Node.js aligning with Backstage ecosystem, or Go/Rust for single-binary distribution)
+- **New package**: standalone CLI binary built with TypeScript and Commander.js, distributed as an npm package (resolved in [Technology Stack ADR](../../../specifications/adr/backstage-agent/technology-stack-and-packaging.md))
 - **Backstage API dependency**: requires a running Backstage instance with catalog, TechDocs, and scaffolder APIs available
 - **Auth integration**: must support standard Backstage authentication mechanisms (static tokens, OIDC)
 - **CI/CD**: new build pipeline for CLI packaging and distribution
