@@ -64,6 +64,17 @@ All commands SHALL return a consistent error envelope on stderr containing an `e
 - **THEN** stderr contains a JSON object with `error.code` set to `USAGE_ERROR`
 - **AND** exit code is `2`
 
+#### Scenario: Error in text output mode
+
+- **WHEN** a command fails with `--output text`
+- **THEN** stderr contains a human-readable error message with the error code, message, recovery suggestion, and hints
+- **AND** the error is NOT formatted as JSON
+
+#### Scenario: Error in default JSON output mode
+
+- **WHEN** a command fails without `--output` flag (or with `--output json`)
+- **THEN** stderr contains the JSON error envelope
+
 ### Requirement: Next-step hints
 
 Every command output SHALL include a `hints` array containing at least one suggested next command. Hints SHALL be concrete, runnable command strings.
