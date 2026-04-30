@@ -87,6 +87,11 @@ Every command SHALL declare its trust level in the output envelope. Trust levels
 - **WHEN** `backstage-agent catalog list` executes
 - **THEN** the `trustLevel` field is `read-only`
 
+#### Scenario: Config set-trust-policy is classified as reversible
+
+- **WHEN** `backstage-agent config set-trust-policy` executes
+- **THEN** the `trustLevel` field is `reversible`
+
 #### Scenario: Template execution is classified as destructive
 
 - **WHEN** `backstage-agent templates execute` executes
@@ -114,6 +119,7 @@ The CLI SHALL enforce a configurable trust policy that gates command execution b
 - **WHEN** a user runs `backstage-agent config set-trust-policy read-only`
 - **THEN** `~/.config/backstage-agent/config.yaml` is updated with `trustPolicy: read-only`
 - **AND** the output envelope confirms the new policy
+- **AND** the `trustLevel` field in the output envelope is `reversible`
 
 #### Scenario: Set trust policy during login
 
