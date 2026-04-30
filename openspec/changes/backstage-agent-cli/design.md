@@ -67,6 +67,7 @@ Groups map to capabilities:
 - `backstage-agent templates list|get|execute`
 - `backstage-agent auth login|status|select|logout`
 - `backstage-agent config set-trust-policy`
+- `backstage-agent doctor` _(future — not in initial scope)_
 
 Every command supports:
 
@@ -200,7 +201,7 @@ When a command is blocked, the CLI exits with a `TRUST_POLICY_VIOLATION` error e
 
 ### D-9: Dry-Run Preview for State-Changing Commands
 
-Commands with side effects support a `--dry-run` flag that returns a preview of what the command *would* do without actually executing it. The dry-run default varies by trust level:
+Commands with side effects support a `--dry-run` flag that returns a preview of what the command _would_ do without actually executing it. The dry-run default varies by trust level:
 
 - **`destructive`** commands default to dry-run mode (`--dry-run` is on). The command shows a preview and exits. Pass `--no-dry-run` to actually execute. This fulfills the PRD's "explicit opt-in" requirement for destructive operations.
 - **`reversible`** commands execute normally by default. Pass `--dry-run` to preview instead of executing.
@@ -217,7 +218,7 @@ Dry-run output uses the standard success envelope (D-4) with an additional `dryR
 }
 ```
 
-Trust policy enforcement (D-8) runs *before* dry-run evaluation — if the policy blocks the command, it is blocked even in dry-run mode.
+Trust policy enforcement (D-8) runs _before_ dry-run evaluation — if the policy blocks the command, it is blocked even in dry-run mode.
 
 **Rationale:** The PRD requires destructive operations to be "gated behind explicit opt-in or policy/config enablement." D-8 (trust policy) provides policy/config enablement. D-9 provides explicit opt-in — destructive commands won't execute unless the agent explicitly passes `--no-dry-run`, demonstrating intent. For reversible commands, dry-run is available but opt-in to avoid unnecessary friction. Commander.js supports negatable boolean options (`--dry-run` / `--no-dry-run`) natively.
 

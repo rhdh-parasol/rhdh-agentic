@@ -33,6 +33,7 @@ Pillar commands to be added in subsequent changes after cli-core and auth are im
 - **Catalog** — discover and inspect components, services, APIs, and their relationships
 - **TechDocs** — search and read organizational documentation, standards, and ADRs
 - **Templates** — list, inspect, and execute scaffolding templates
+- **Doctor** — health-check command that verifies backend connectivity, auth token validity, config file presence, and trust policy state
 
 ### Modified Capabilities
 
