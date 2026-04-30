@@ -1,5 +1,23 @@
 ## ADDED Requirements
 
+### Requirement: No-arg status summary
+
+When invoked with no arguments, the CLI SHALL return a status summary containing the current auth instance (or `null` if unconfigured), the active trust policy, and a list of available command groups with descriptions. The output SHALL use the standard success envelope and include hints guiding the agent to useful next commands.
+
+#### Scenario: No-arg with authenticated instance
+
+- **WHEN** `backstage-agent` is invoked with no arguments
+- **AND** an authenticated instance is configured
+- **THEN** the output envelope `data` contains `instance` with `name` and `authenticated` fields, `trustPolicy`, and `commandGroups` array
+- **AND** `hints` includes suggestions for available commands
+
+#### Scenario: No-arg with no instance configured
+
+- **WHEN** `backstage-agent` is invoked with no arguments
+- **AND** no instance is configured
+- **THEN** the output envelope `data.instance` is `null`
+- **AND** `hints` includes `backstage-agent auth login --backend-url <url>`
+
 ### Requirement: Structured JSON output envelope
 
 All commands SHALL return a consistent JSON envelope on stdout containing a `data` field with the command-specific payload, a `hints` array with next-step command suggestions, and a `trustLevel` string classifying the operation as `read-only`, `reversible`, or `destructive`.

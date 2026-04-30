@@ -74,7 +74,31 @@ Every command supports:
 - `--instance <name>` (override selected instance, otherwise uses the instance marked `selected: true`)
 - `--help` (full contract: signature, output schema, trust level, examples)
 
-**Rationale:** Verb-noun pattern matches `gh` CLI and is predictable for agents discovering commands via `--help`. Grouping by pillar maps directly to the Backstage domain model.
+When invoked with no arguments, the CLI returns a status summary with available command groups — giving agents a useful entry point instead of a help dump:
+
+```json
+{
+  "data": {
+    "instance": { "name": "backstage.example.com", "authenticated": true },
+    "trustPolicy": "read-only",
+    "commandGroups": [
+      { "name": "auth", "description": "Authentication and instance management" },
+      { "name": "catalog", "description": "Software catalog operations" },
+      { "name": "techdocs", "description": "Organizational documentation" },
+      { "name": "templates", "description": "Scaffolding templates" },
+      { "name": "config", "description": "CLI configuration" }
+    ]
+  },
+  "hints": [
+    "Try: backstage-agent catalog list",
+    "Try: backstage-agent auth status"
+  ]
+}
+```
+
+If no instance is configured, `instance` is `null` and hints guide toward `auth login`.
+
+**Rationale:** Verb-noun pattern matches `gh` CLI and is predictable for agents discovering commands via `--help`. Grouping by pillar maps directly to the Backstage domain model. No-arg output gives agents a natural discovery path — run the command, read the status and hints, proceed.
 
 ### D-3: Pagination — Explicit Flags, No Auto-Pagination
 
