@@ -46,5 +46,5 @@
 
 ## 7. Capability Demos
 
-- [ ] 7.1 Create `openspec/specs/cli-core/demo.md` with a worked example showing the full output envelope lifecycle: successful command, error handling, hint generation, and trust level classification
-- [ ] 7.2 Create `openspec/specs/auth/demo.md` with a scenario walkthrough covering login (with derived and explicit instance names), multi-instance status, trust policy setup during login, and logout
+- [ ] 7.1 Create `openspec/changes/backstage-agent-cli/specs/cli-core/demo.md` with a worked example showing the full output envelope lifecycle: successful command, error handling, hint generation, and trust level classification
+- [ ] 7.2 Create `openspec/changes/backstage-agent-cli/specs/auth/demo.md` with a scenario walkthrough covering login (with derived and explicit instance names), multi-instance status, trust policy setup during login, and logout
