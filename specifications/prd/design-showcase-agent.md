@@ -32,7 +32,7 @@ Provide a remote coding agent that gives enterprise architects a catalog-aware s
 
 ### Core Idea
 
-A remote coding agent that connects to a running RHDH instance via any agent-capable tool (Claude Code, Claude CLI, Cursor, or similar). The agent chains the three foundational Backstage pillars — Software Catalog, TechDocs, and Software Templates — into a single, interactive workflow. Any agent that can execute shell commands can participate.
+A remote coding agent that connects to a running RHDH instance via any agent-capable tool (Claude Code, Claude CLI, Cursor, or similar). The agent interacts with Backstage exclusively through the `backstage-agent` CLI — no MCP Actions, no direct API calls. Any agent that can execute shell commands can participate. The `backstage-agent` CLI is the single integration point: it provides intent-based commands with structured output that agents consume naturally.
 
 The agent does not write application code. It discovers what exists, learns the organization's standards, identifies what can be reused, and scaffolds new services using the organization's own approved templates. The value is in the agent's ability to reason across catalog, documentation, and templates — making architecture decisions that respect organizational constraints.
 
@@ -40,21 +40,21 @@ The agent does not write application code. It discovers what exists, learns the 
 
 The agent operates through any tool that supports agent capabilities — Claude Code, Claude CLI GUI, Cursor IDE, or similar. The architect interacts conversationally: describing the design need, answering clarifying questions, and approving proposals before the agent acts. The agent does not operate autonomously — it presents plans and waits for approval at key steps.
 
-### Authentication and Authorization
+### Security Boundary
 
-The agent requires proper authentication and authorization to access the RHDH instance. It operates under the architect's access permissions — if the architect cannot see a catalog component or use a template, neither can the agent. Only allowed CLIs and tools may be used by the agent; the set of permitted tools is an explicit security boundary.
+Authentication and authorization are handled by the `backstage-agent` CLI, not by the agent itself. The agent operates under the architect's access permissions — if the architect cannot see a catalog component or use a template, neither can the agent. Only allowed CLIs and tools may be used by the agent; the set of permitted tools is an explicit security boundary.
 
 ### The Agent Workflow
 
 The agent follows a five-step catalog-aware scaffolding workflow:
 
-1. **Authenticate** — Establish authenticated access to the RHDH instance under the architect's permissions. The agent must verify it has the necessary authorization before proceeding.
-2. **Discover** — Query the catalog for the target domain and existing services. Understand what components, APIs, and systems already exist, who owns them, and how they connect.
-3. **Learn** — Read TechDocs to find approved technology stacks, ADRs, and governance rules for the target domain. Understand why decisions were made and what constraints apply.
-4. **Reuse** — Identify components that already exist and can be consumed rather than rebuilt. The agent proposes which existing services, APIs, and resources the new service should integrate with. The architect reviews and approves before proceeding.
-5. **Scaffold** — Execute a software template that matches the domain's constraints (e.g., Quarkus + PostgreSQL + Kafka for a domain that mandates that stack). The new service is scaffolded according to organizational standards.
+1. **Discover** — Query the catalog for the target domain and existing services. Understand what components, APIs, and systems already exist, who owns them, and how they connect.
+2. **Learn** — Read TechDocs to find approved technology stacks, ADRs, and governance rules for the target domain. Understand why decisions were made and what constraints apply.
+3. **Reuse** — Identify components that already exist and can be consumed rather than rebuilt. The agent proposes which existing services, APIs, and resources the new service should integrate with. The architect reviews and approves before proceeding.
+4. **Scaffold** — The agent presents matching templates from the catalog for the architect to select, then executes the chosen software template that matches the domain's constraints (e.g., Quarkus + PostgreSQL + Kafka for a domain that mandates that stack). The new service is scaffolded according to organizational standards.
+5. **Verify** — If the executed template includes `publish:github` and `register:catalog` steps and the RHDH instance is properly configured, confirm the new service appears in the catalog with correct ownership, dependencies, and metadata.
 
-A future **Verify** step — confirming the new service appears in the catalog with correct ownership, dependencies, and metadata — is out of scope until templates can publish to a real GitHub org.
+**Stretch goal:** If no existing template fits the architect's design need, the agent can — with the architect's explicit approval — create a new software template, register it in the catalog, and use it to scaffold the service.
 
 ### What the Agent Produces
 
@@ -78,7 +78,7 @@ A future **Verify** step — confirming the new service appears in the catalog w
 
 ### Scope and Assumptions
 
-The agent assumes a **running, properly configured RHDH instance** with catalog entities, TechDocs content, and software templates already loaded. The agent does not set up RHDH, configure plugins, or build platform infrastructure. The architect must have valid credentials and appropriate access to the instance.
+The agent assumes a **running, properly configured RHDH instance** with catalog entities, TechDocs content, and software templates already loaded. Authentication and authorization are handled by the `backstage-agent` CLI — the architect must have authenticated via `backstage-agent auth login` before using the agent. The agent operates within the user's permission scope: if the user has no permission to execute a template or view a catalog component, the agent cannot do so either. The agent does not set up RHDH, configure plugins, or build platform infrastructure.
 
 What the agent does:
 
@@ -92,8 +92,7 @@ What the agent does NOT do:
 
 - Write application code
 - Set up or configure the RHDH instance
-- Create new software templates
-- Deploy or run the scaffolded service (future scope, blocked by template publish capability)
+- Create new software templates (stretch goal — requires architect approval)
 
 ## 5. Domain Context
 
@@ -103,7 +102,7 @@ This product is the primary validation scenario for the other two projects in th
 
 | Product | Role | Relationship |
 |---------|------|--------------|
-| **[Backstage Agent CLI](./backstage-agent.md)** | Intent-based CLI for agent-catalog interaction | The Design Showcase Agent may use the CLI as one way to interact with Backstage. It can also use Backstage APIs, MCP Actions, or any available interface. |
+| **[Backstage Agent CLI](./backstage-agent.md)** | Intent-based CLI for agent-catalog interaction | The Design Showcase Agent interacts with Backstage exclusively through the `backstage-agent` CLI. The CLI is the single integration point — no MCP Actions or direct API calls. |
 | **[Simulated Enterprise Catalog](./simulated-enterprise-catalog.md)** | Realistic enterprise catalog content (Parasol Insurance) | Provides the catalog entities, TechDocs, and software templates that the agent queries. The primary validation environment — but the agent works with any Backstage catalog. |
 
 ### Three Foundational Layers
@@ -138,8 +137,6 @@ For Red Hat, this positions RHDH as the platform that makes AI-assisted developm
 - **Specific demo scenario** — Whether the first demo scaffolds a claims processing service in Parasol Insurance or another domain service is implementation scope.
 - **RHDH instance setup** — The agent assumes a running, configured RHDH instance. How that instance is installed, configured, or managed is out of scope.
 - **Allowed tool list** — The specific set of CLIs and tools the agent is permitted to use is a security/policy decision, not a product decision.
-- **Verify step** — Confirming the scaffolded service appears in the catalog with correct metadata is future scope, blocked until templates can publish to a real GitHub org.
-- **Backstage Agent CLI** — The CLI is a separate product. This agent may use it but does not require it.
 
 ## 8. Existing Codebase
 
@@ -171,8 +168,7 @@ RHDH-specific templates for ArgoCD, Quarkus, Spring Boot, Tekton, Ansible. Avail
 
 ## Dependencies
 
-- **Requires:** CLI Foundation (#31) — the agent needs commands to interact with the catalog, TechDocs, and templates
-- **Blocked by:** Template publish/register (#35) — the Verify step cannot be demonstrated until templates can publish to a real GitHub org
+- **Requires:** CLI Foundation (#31) — the agent needs `backstage-agent` commands to interact with the catalog, TechDocs, and templates
 
 ## References
 
