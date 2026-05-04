@@ -1,3 +1,5 @@
+<!-- After each completed task, commit the changes. -->
+
 ## 1. <!-- Task Group Name -->
 
 - [ ] 1.1 <!-- Task description -->

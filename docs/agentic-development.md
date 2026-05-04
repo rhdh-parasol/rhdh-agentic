@@ -8,15 +8,15 @@ Traditional SDLC roles (product manager, architect, developer) each have well-de
 
 The human remains in control. The agent handles process; the human makes decisions.
 
-## Skills as Process-as-Code
+## Skills as Agent Identities
 
-A skill is a structured definition that lives in `.claude/skills/` alongside the codebase. It typically contains:
+A skill defines a persona — who the agent is, what it cares about, what it produces, and where it stops. Skills live in `.claude/skills/` alongside the codebase:
 
 ```
 .claude/skills/<persona>/
-├── SKILL.md           # Role definition, triggers, principles
-├── workflows/         # Step-by-step procedures for each loop
-└── templates/         # Output formats (specs, reviews, issues)
+├── SKILL.md           # Identity, principles, artifacts, boundaries
+├── templates/         # Output formats (specs, reviews)
+└── workflows/         # Step-by-step procedures (optional, per skill)
 ```
 
 Because skills are version-controlled, the team's process evolves with the code. A new contributor — human or agent — picks up the current process by cloning the repo.
@@ -25,47 +25,58 @@ Because skills are version-controlled, the team's process evolves with the code.
 
 **Product Manager** (`product-manager`) owns the *what* and *why*:
 
-- **Product Definition** — Takes a high-level goal and produces a Product Requirements Document (PRD)
-- **Acceptance** — Reviews PRs against the PRD: does this deliver what the product needs?
+- Writes and maintains Product Requirements Documents (PRDs)
+- Reviews PRs for product alignment and scope drift
+- Guards product scope — if it's not in the PRD, it's not a requirement
 
 **Architect** (`architect`) owns the *how* and *trade-offs*:
 
-- **Decision** — Captures architectural choices in Architecture Decision Records (ADRs)
-- **Specification** — Translates ADR decisions into Tier-2 technical specs (FSDs with data models, APIs)
-- **Review** — Reviews PRs for structural compliance with architectural decisions
+- Captures structural decisions in Architecture Decision Records (ADRs)
+- Reviews PRDs for architectural readiness
+- Reviews PRs for structural soundness against ADR decisions
 
-**Tech Lead** (`tech-lead`) owns *execution planning*:
+### OpenSpec for Change Management and Task Decomposition
 
-- Produces epics from the PRD, using FSDs and/or ADRs when available
-- Orders epics by dependency and identifies parallelizable work
+We use **[OpenSpec](https://openspec.dev/)** to manage changes through a structured artifact workflow. Each change lives in `openspec/changes/<name>/` and progresses through a defined sequence: proposal → specs → design → tasks → implementation → archive.
 
-**Developer** (`developer`) owns *implementation and quality* *(planned)*:
+OpenSpec handles what was previously split across multiple personas:
 
-- Implementation against FSD and ADR constraints
-- Test coverage and inner-loop feedback
-- PR response and iteration
+- **Specs** replace Functional Specification Documents (FSDs) — defining what needs to be built
+- **Tasks** replace epics — decomposing work into implementable units
+
+This separation keeps personas focused on identity (principles and judgment) while OpenSpec handles lifecycle (sequencing and decomposition).
+
+**Key commands:**
+
+| Command | What it does |
+|---|---|
+| `/opsx:onboard` | Guided walkthrough of a complete workflow cycle |
+| `/opsx:new` | Start a new change, step through artifacts one at a time |
+| `/opsx:apply` | Implement tasks from a change |
+| `/opsx:archive` | Archive a completed change |
+
+Run `/opsx:onboard` to learn the workflow by doing it on a real task in the codebase.
 
 ### Collaboration Through Artifacts
 
 Personas don't talk to each other directly — they collaborate through **shared artifacts**:
 
 ```
-Product Manager        Architect            Tech Lead            Developer
-      │                    │                    │                    │
-      ├─── PRD ──────────► │                    │                    │
-      ├─── PRD ─────────────────────────────► │                    │
-      │                    ├─── FSD ──────────► │                    │
-      │                    ├─── ADR ──────────► │                    │
-      │                    │                    ├─── Epics ─────────►│
-      │                    │                    │                    │
-      │◄── PR (product)    │◄── PR (technical)  │                    │
+Product Manager        Architect             Developer
+      │                    │                    │
+      ├─── PRD ──────────► │                    │
+      │                    ├─── ADR ───────────►│
+      │                    │                    │
+      │     OpenSpec: specs + tasks ───────────►│
+      │                    │                    │
+      │◄── PR (product)    │◄── PR (technical)  │
 ```
 
-Each persona's skill defines its own review criteria, so a single PR can receive both a product review (does it deliver what the PRD asks for?) and a technical review (does it follow the architecture?). The Tech Lead produces epics from the PRD, using FSDs and/or ADRs when available to add technical detail.
+Each persona's skill defines its own review criteria, so a single PR can receive both a product review (does it deliver what the PRD asks for?) and a technical review (does it follow the architecture?).
 
 ### Current Tooling
 
-Artifacts (PRDs, FSDs, ADRs) are tracked **in the repository** as markdown files under `specifications/`. GitHub serves as an optional **coordination layer** for status tracking (PRs, labels) — not the source of truth for artifacts. Agents read specs from the repo, not from issue bodies.
+Artifacts are tracked **in the repository** as markdown files — PRDs and ADRs under `specifications/`, feature and domain specs under `openspec/specs/`. GitHub serves as an optional **coordination layer** for status tracking (PRs, labels) — not the source of truth for artifacts. Agents read specs from the repo, not from issue bodies.
 
 This is intentional: keeping artifacts in the repo makes them version-controlled, auditable, and close to the code. The skills define *what* to produce and *how* to review, not *where* to coordinate — so the coordination layer (GitHub, Jira, etc.) can change without affecting the skill definitions.
 
@@ -79,30 +90,12 @@ Pull requests are the primary coordination point between humans and agents. The 
 
 - **Product Manager** — Does this PR deliver what the PRD asks for? (acceptance against PRD goals)
 - **Architect** — Does the implementation comply with ADR decisions and structural constraints? (technical review)
-- **Tech Lead** — Does this PR satisfy the epic's acceptance criteria? (implementation completeness)
 
-Each persona has its own review workflow and verdict template, so review criteria are consistent and auditable.
+Each persona has its own review principles and verdict template, so review criteria are consistent and auditable.
 
 **No self-merging** — Every PR requires review from another team member. Even when both parties use AI agents to assist, the human on the other side makes the approve/reject decision.
 
 **Auto-merge** — A GitHub Actions workflow enables auto-merge (squash) on every non-draft PR targeting `main`. The PR does not merge immediately — GitHub waits for branch protection conditions (green checks + approval) before merging. This removes the manual "click merge" step and lets the team focus on review quality rather than merge logistics.
-
-### OpenSpec for Change Management
-
-We use **[OpenSpec](https://openspec.dev/)** to manage changes through a structured artifact workflow. Each change lives in `openspec/changes/<name>/` and progresses through a defined sequence: proposal → specs → design → tasks → implementation → archive.
-
-OpenSpec complements the persona skills above — personas define *who* does the work and *how* they review it, while OpenSpec defines *the lifecycle* of a change from idea to completion.
-
-**Key commands:**
-
-| Command | What it does |
-|---|---|
-| `/opsx:onboard` | Guided walkthrough of a complete workflow cycle |
-| `/opsx:new` | Start a new change, step through artifacts one at a time |
-| `/opsx:apply` | Implement tasks from a change |
-| `/opsx:archive` | Archive a completed change |
-
-Run `/opsx:onboard` to learn the workflow by doing it on a real task in the codebase.
 
 ## Sharing Skills Across Teams
 
@@ -144,24 +137,24 @@ The foundation. Each SDLC persona has a skill. Skills are version-controlled and
 
 - A product manager invokes `/product-manager` to write a PRD from a product goal
 - An architect invokes `/architect` to capture a decision as an ADR
-- Reviews happen through skill-defined templates, ensuring consistent evaluation criteria
+- Reviews happen through skill-defined principles, ensuring consistent evaluation criteria
 
 ### Level 2: Multi-Persona Workflows
 
-Personas are aware of each other's artifacts and constraints. The PM's PRD feeds the architect's FSDs and ADRs, which the Tech Lead breaks down into epics for the developer.
+Personas are aware of each other's artifacts and constraints. The PM's PRD feeds the architect's ADRs, and OpenSpec decomposes the work into specs and tasks for the developer.
 
 **What you get:**
 
-- Traceability from goal → spec → decision → implementation → review
+- Traceability from goal → PRD → ADR → spec → task → implementation → review
 - Each persona reviews from its own perspective, catching different classes of issues
 - Artifacts serve as the shared language between humans and agents
 
 **What it looks like in practice:**
 
 - The PM writes a PRD that defines the product vision and goals
-- The architect creates ADRs for key decisions and writes FSDs with technical specs
-- The Tech Lead produces epics from FSDs and/or ADRs, ordered by dependency
-- The developer implements against FSDs and ADRs, and the PR receives a product review (PM) and a technical review (architect)
+- The architect creates ADRs for key decisions
+- OpenSpec produces specs and tasks, ordered by dependency
+- The developer implements against specs and ADRs, and the PR receives a product review (PM) and a technical review (architect)
 
 ### Level 3: Agents in Systems
 
@@ -183,7 +176,7 @@ Agents participate beyond the IDE — in CI/CD pipelines, deployment workflows, 
 
 1. **Clone the repo** — Skills in `.claude/skills/` are immediately available
 2. **Try a persona** — Run `/product-manager` or `/architect` to see how skills guide agent behavior
-3. **Read the skill definitions** — `SKILL.md` files document each persona's responsibilities and workflows
+3. **Read the skill definitions** — `SKILL.md` files document each persona's identity, principles, and boundaries
 4. **Adapt for your team** — Modify skills, add new personas, or adjust review criteria to match your process
 
 ## What We're Learning

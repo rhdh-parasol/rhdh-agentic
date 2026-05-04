@@ -18,6 +18,11 @@
      Use existing spec names from openspec/specs/. Leave empty if no requirement changes. -->
 - `<existing-name>`: <what requirement is changing>
 
+## Canonical Touchpoints
+
+<!-- Name every affected file under specifications/ (PRD/ADR) and openspec/specs/ (long-lived feature specs), or state None. -->
+<!-- Also state whether this change is: product | architecture | feature-spec | migration | workflow-only | docs-only -->
+
 ## Impact
 
 <!-- Affected code, APIs, dependencies, systems -->

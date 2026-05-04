@@ -1,3 +1,7 @@
+## Canonical Touchpoints
+
+<!-- Carry forward from proposal. For each touched canonical doc/spec, explain how it will change, or state: No canonical document updates. -->
+
 ## Context
 
 <!-- Background and current state -->
