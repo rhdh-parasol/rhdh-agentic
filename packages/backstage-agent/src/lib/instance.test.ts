@@ -3,7 +3,8 @@ import { mkdtempSync, rmSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import YAML from 'yaml';
-import { readInstances, writeInstances, upsertInstance, getInstanceByName, setSelectedInstance, removeInstance, resolveInstanceOrExit } from './instance.js';
+import { readInstances, writeInstances, upsertInstance, getInstanceByName, setSelectedInstance, removeInstance, resolveInstance } from './instance.js';
+import { CliError } from '../output/formatter.js';
 
 let origHome: string;
 let origXdg: string | undefined;
@@ -293,66 +294,58 @@ describe('Instance Resolution', () => {
   });
 });
 
-describe('resolveInstanceOrExit', () => {
-  let stderrWrite: ReturnType<typeof vi.spyOn>;
-  let processExit: ReturnType<typeof vi.spyOn>;
-
-  beforeEach(() => {
-    stderrWrite = vi.spyOn(process.stderr, 'write').mockReturnValue(true);
-    processExit = vi.spyOn(process, 'exit').mockImplementation(() => {
-      throw new Error('process.exit called');
-    });
-  });
-
-  afterEach(() => {
-    stderrWrite.mockRestore();
-    processExit.mockRestore();
-  });
-
+describe('resolveInstance', () => {
   it('returns the flag value when instance exists', () => {
     writeInstancesFile([makeInstance({ name: 'prod', selected: true })]);
 
-    const result = resolveInstanceOrExit('prod', 'json');
+    const result = resolveInstance('prod');
     expect(result).toBe('prod');
   });
 
   it('returns the selected instance name when no flag given', () => {
     writeInstancesFile([makeInstance({ name: 'prod', selected: true })]);
 
-    const result = resolveInstanceOrExit(undefined, 'json');
+    const result = resolveInstance(undefined);
     expect(result).toBe('prod');
   });
 
-  it('exits with INSTANCE_NOT_FOUND for unknown --instance flag', () => {
+  it('throws CliError with INSTANCE_NOT_FOUND for unknown --instance flag', () => {
     writeInstancesFile([makeInstance({ name: 'prod', selected: true })]);
 
-    expect(() => resolveInstanceOrExit('nonexistent', 'json'))
-      .toThrow('process.exit called');
-
-    const output = JSON.parse(stderrWrite.mock.calls[0][0] as string);
-    expect(output.error.code).toBe('INSTANCE_NOT_FOUND');
-    expect(output.error.message).toContain('nonexistent');
-    expect(output.error.recovery).toContain('prod');
+    try {
+      resolveInstance('nonexistent');
+      expect.unreachable('should throw');
+    } catch (err) {
+      expect(err).toBeInstanceOf(CliError);
+      const cliErr = err as CliError;
+      expect(cliErr.code).toBe('INSTANCE_NOT_FOUND');
+      expect(cliErr.message).toContain('nonexistent');
+      expect(cliErr.recovery).toContain('prod');
+    }
   });
 
-  it('exits with NO_AUTH_INSTANCE when no instances configured', () => {
-    expect(() => resolveInstanceOrExit(undefined, 'json'))
-      .toThrow('process.exit called');
-
-    const output = JSON.parse(stderrWrite.mock.calls[0][0] as string);
-    expect(output.error.code).toBe('NO_AUTH_INSTANCE');
+  it('throws CliError with NO_AUTH_INSTANCE when no instances configured', () => {
+    try {
+      resolveInstance(undefined);
+      expect.unreachable('should throw');
+    } catch (err) {
+      expect(err).toBeInstanceOf(CliError);
+      expect((err as CliError).code).toBe('NO_AUTH_INSTANCE');
+    }
   });
 
-  it('exits with NO_SELECTED_INSTANCE when none selected', () => {
+  it('throws CliError with NO_SELECTED_INSTANCE when none selected', () => {
     writeInstancesFile([
       makeInstance({ name: 'prod', selected: false }),
       makeInstance({ name: 'staging', selected: false }),
     ]);
 
-    expect(() => resolveInstanceOrExit(undefined, 'json'))
-      .toThrow('process.exit called');
-
-    const output = JSON.parse(stderrWrite.mock.calls[0][0] as string);
-    expect(output.error.code).toBe('NO_SELECTED_INSTANCE');
+    try {
+      resolveInstance(undefined);
+      expect.unreachable('should throw');
+    } catch (err) {
+      expect(err).toBeInstanceOf(CliError);
+      expect((err as CliError).code).toBe('NO_SELECTED_INSTANCE');
+    }
   });
 });

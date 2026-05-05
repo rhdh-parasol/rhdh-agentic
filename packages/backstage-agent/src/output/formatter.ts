@@ -31,6 +31,17 @@ export interface ErrorEnvelope {
 
 export type OutputFormat = 'json' | 'text';
 
+export class CliError extends Error {
+  constructor(
+    public readonly code: ErrorCode,
+    message: string,
+    public readonly recovery: string,
+    public readonly hints: string[] = [],
+  ) {
+    super(message);
+  }
+}
+
 export function formatSuccess<T>(
   data: T,
   hints: string[],

@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import YAML from 'yaml';
 import { getConfigRoot } from './paths.js';
-import { formatError, type OutputFormat } from '../output/formatter.js';
+import { CliError } from '../output/formatter.js';
 import { loginHint, authStatusHint } from '../output/hints.js';
 
 export interface StoredInstance {
@@ -124,9 +124,8 @@ export function getInstanceByName(name: string): StoredInstance | undefined {
   return readInstances().find(i => i.name === name);
 }
 
-export function resolveInstanceOrExit(
+export function resolveInstance(
   flagValue: string | undefined,
-  format: OutputFormat,
 ): string {
   const instances = readInstances();
 
@@ -134,37 +133,34 @@ export function resolveInstanceOrExit(
     const found = instances.find(i => i.name === flagValue);
     if (!found) {
       const available = instances.map(i => i.name);
-      return formatError(
+      throw new CliError(
         'INSTANCE_NOT_FOUND',
         `No stored instance named "${flagValue}"`,
         available.length > 0
           ? `Available instances: ${available.join(', ')}`
           : 'No instances configured',
         [authStatusHint(), loginHint()],
-        format,
       );
     }
     return flagValue;
   }
 
   if (instances.length === 0) {
-    return formatError(
+    throw new CliError(
       'NO_AUTH_INSTANCE',
       'No authenticated Backstage instance configured',
       'Run backstage-agent auth login to authenticate',
       [loginHint()],
-      format,
     );
   }
 
   const selected = instances.find(i => i.selected);
   if (!selected) {
-    return formatError(
+    throw new CliError(
       'NO_SELECTED_INSTANCE',
       'No instance is currently selected',
       'Run backstage-agent auth select <name> to select an instance',
       [authStatusHint()],
-      format,
     );
   }
 

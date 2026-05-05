@@ -125,12 +125,14 @@ function mockFetchForLogin(overrides?: {
     if (urlStr.includes('.well-known/oauth-client/cli.json')) {
       return new Response(JSON.stringify({ client_id: 'test-client' }), {
         status: clientConfigStatus,
+        headers: { 'Content-Type': 'application/json' },
       });
     }
     if (urlStr.includes('/v1/token')) {
       return new Response(JSON.stringify(tokenBody), {
         status: tokenStatus,
         statusText: tokenStatus === 200 ? 'OK' : 'Bad Request',
+        headers: { 'Content-Type': 'application/json' },
       });
     }
     return new Response('Not found', { status: 404 });
@@ -214,7 +216,7 @@ describe('auth login', () => {
     ).rejects.toThrow('process.exit called');
 
     const output = JSON.parse(stderrWrite.mock.calls[0][0] as string);
-    expect(output.error.code).toBe('CONNECTION_ERROR');
+    expect(output.error.code).toBe('SERVER_ERROR');
   });
 
   it('errors when token exchange fails', async () => {

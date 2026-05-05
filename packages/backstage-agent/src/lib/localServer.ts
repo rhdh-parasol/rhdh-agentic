@@ -96,13 +96,18 @@ export async function startCallbackServer(options: {
     });
   });
 
+  let closed = false;
   return {
     url: `http://127.0.0.1:${port}/callback`,
     waitForCode: () => resultPromise,
     close: async () => {
+      if (closed) return;
+      closed = true;
       clearTimeout(timer);
       server.closeAllConnections();
-      return new Promise<void>(resolve => server.close(() => resolve()));
+      return new Promise<void>((resolve, reject) =>
+        server.close(err => (err ? reject(err) : resolve())),
+      );
     },
   };
 }

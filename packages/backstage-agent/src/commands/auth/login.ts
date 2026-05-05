@@ -25,10 +25,10 @@ export function createLoginCommand(): Command {
       let backendUrl: string;
       try {
         backendUrl = normalizeUrl(opts.backendUrl);
-      } catch {
+      } catch (err) {
         return formatError(
           'USAGE_ERROR',
-          `Invalid backend URL: "${opts.backendUrl}"`,
+          `Invalid backend URL: "${opts.backendUrl}" (${err instanceof Error ? err.message : String(err)})`,
           'Provide a valid URL, e.g. --backend-url https://backstage.example.com',
           [],
           output,
@@ -54,24 +54,11 @@ export function createLoginCommand(): Command {
       const clientConfigUrl = `${authBaseUrl}/.well-known/oauth-client/cli.json`;
 
       let clientId: string;
+      let clientConfigResp: Response;
       try {
-        const resp = await fetch(clientConfigUrl, {
+        clientConfigResp = await fetch(clientConfigUrl, {
           signal: AbortSignal.timeout(TOKEN_EXCHANGE_TIMEOUT_MS),
         });
-        if (!resp.ok) {
-          throw new Error(`HTTP ${resp.status}`);
-        }
-        const clientConfig = (await resp.json()) as { client_id?: string };
-        if (!clientConfig.client_id) {
-          return formatError(
-            'SERVER_ERROR',
-            `Backstage instance at ${backendUrl} did not return a client_id in its OAuth client configuration`,
-            'Ensure the Backstage auth backend is properly configured with OAuth client metadata',
-            [],
-            output,
-          );
-        }
-        clientId = clientConfig.client_id;
       } catch (err) {
         return formatError(
           'CONNECTION_ERROR',
@@ -81,6 +68,36 @@ export function createLoginCommand(): Command {
           output,
         );
       }
+      if (!clientConfigResp.ok) {
+        return formatError(
+          'SERVER_ERROR',
+          `Backstage instance at ${backendUrl} returned HTTP ${clientConfigResp.status} for OAuth client configuration`,
+          'Ensure the Backstage auth backend is properly configured with OAuth client metadata',
+          [],
+          output,
+        );
+      }
+      const contentType = clientConfigResp.headers.get('content-type') ?? '';
+      if (!contentType.includes('application/json')) {
+        return formatError(
+          'SERVER_ERROR',
+          `Expected JSON from ${clientConfigUrl} but received ${contentType || 'unknown content type'}`,
+          'Ensure the URL points to a Backstage backend, not a proxy or login page',
+          [],
+          output,
+        );
+      }
+      const clientConfig = (await clientConfigResp.json()) as { client_id?: string };
+      if (!clientConfig.client_id) {
+        return formatError(
+          'SERVER_ERROR',
+          `Backstage instance at ${backendUrl} did not return a client_id in its OAuth client configuration`,
+          'Ensure the Backstage auth backend is properly configured with OAuth client metadata',
+          [],
+          output,
+        );
+      }
+      clientId = clientConfig.client_id;
 
       const verifier = generateVerifier();
       const challenge = challengeFromVerifier(verifier);
@@ -119,7 +136,6 @@ export function createLoginCommand(): Command {
           }
           code = result.code;
         } catch (err) {
-          await callback.close();
           return formatError(
             'AUTH_ERROR',
             `OAuth callback failed: ${err instanceof Error ? err.message : String(err)}`,
@@ -174,10 +190,10 @@ export function createLoginCommand(): Command {
         let parsed: URL;
         try {
           parsed = new URL(callbackUrl);
-        } catch {
+        } catch (err) {
           return formatError(
             'USAGE_ERROR',
-            'The pasted callback URL is not a valid URL',
+            `The pasted callback URL is not a valid URL (${err instanceof Error ? err.message : String(err)})`,
             'Copy the full URL from your browser address bar after authenticating',
             [],
             output,
@@ -224,6 +240,10 @@ export function createLoginCommand(): Command {
         if (!tokenResp.ok) {
           const body = await tokenResp.text();
           throw new Error(`Token exchange failed: ${tokenResp.status} ${body}`);
+        }
+        const tokenContentType = tokenResp.headers.get('content-type') ?? '';
+        if (!tokenContentType.includes('application/json')) {
+          throw new Error(`Token endpoint returned ${tokenContentType || 'unknown content type'} instead of JSON`);
         }
         token = (await tokenResp.json()) as typeof token;
         const missingFields: string[] = [];

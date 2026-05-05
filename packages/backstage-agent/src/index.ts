@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { formatSuccess, formatError, type OutputFormat, type TrustLevel } from './output/formatter.js';
+import { formatSuccess, formatError, CliError, type OutputFormat, type TrustLevel } from './output/formatter.js';
 import { readConfig } from './lib/config.js';
 import { readInstances } from './lib/instance.js';
 import { enforceTrustPolicy } from './lib/enforce.js';
@@ -22,9 +22,9 @@ program
   .option('--instance <name>', 'Target a specific stored auth instance')
   .exitOverride()
   .configureOutput({
-    writeErr: () => {},
+    writeErr: (str: string) => process.stderr.write(str),
     writeOut: (str: string) => process.stdout.write(str),
-    outputError: () => {},
+    outputError: (str: string) => process.stderr.write(str),
   });
 
 interface CommandMetadata {
@@ -39,7 +39,10 @@ const commandMeta = new Map<Command, CommandMetadata>();
 function registerMeta(cmd: Command, meta: CommandMetadata): void {
   commandMeta.set(cmd, meta);
   cmd.exitOverride();
-  cmd.configureOutput({ writeErr: () => {}, outputError: () => {} });
+  cmd.configureOutput({
+    writeErr: (str: string) => process.stderr.write(str),
+    outputError: (str: string) => process.stderr.write(str),
+  });
 
   cmd.addHelpText('after', () => {
     const lines: string[] = [''];
@@ -67,26 +70,25 @@ function registerMeta(cmd: Command, meta: CommandMetadata): void {
   if (!meta.exempt) {
     cmd.hook('preAction', (_thisCmd, actionCmd) => {
       const { output } = getGlobalOptions(actionCmd);
-      const fullName = getFullCommandName(actionCmd);
-      enforceTrustPolicy(fullName, meta.trustLevel, output);
+      try {
+        enforceTrustPolicy(meta.trustLevel);
+      } catch (err) {
+        if (err instanceof CliError) {
+          formatError(err.code, err.message, err.recovery, err.hints, output);
+        }
+        throw err;
+      }
     });
   }
-}
-
-function getFullCommandName(cmd: Command): string {
-  const parts: string[] = [];
-  let current: Command | null = cmd;
-  while (current && current !== program) {
-    parts.unshift(current.name());
-    current = current.parent;
-  }
-  return parts.join(' ');
 }
 
 // Auth command group
 const authGroup = new Command('auth').description('Authentication and instance management')
   .exitOverride()
-  .configureOutput({ writeErr: () => {}, outputError: () => {} });
+  .configureOutput({
+    writeErr: (str: string) => process.stderr.write(str),
+    outputError: (str: string) => process.stderr.write(str),
+  });
 
 const loginCmd = createLoginCommand();
 registerMeta(loginCmd, {
@@ -146,7 +148,10 @@ program.addCommand(authGroup);
 // Config command group
 const configGroup = new Command('config').description('CLI configuration')
   .exitOverride()
-  .configureOutput({ writeErr: () => {}, outputError: () => {} });
+  .configureOutput({
+    writeErr: (str: string) => process.stderr.write(str),
+    outputError: (str: string) => process.stderr.write(str),
+  });
 
 const setTrustPolicyCmd = createSetTrustPolicyCommand();
 registerMeta(setTrustPolicyCmd, {

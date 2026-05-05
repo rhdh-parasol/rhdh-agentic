@@ -1,7 +1,7 @@
 import { Command } from 'commander';
-import { formatSuccess, formatError } from '../../output/formatter.js';
+import { formatSuccess, formatError, CliError } from '../../output/formatter.js';
 import { getGlobalOptions } from '../../lib/globals.js';
-import { resolveInstanceOrExit } from '../../lib/instance.js';
+import { resolveInstance } from '../../lib/instance.js';
 import { getAuthenticatedContext } from '../../lib/auth.js';
 import { loginHint } from '../../output/hints.js';
 
@@ -10,7 +10,15 @@ export function createWhoamiCommand(): Command {
     .description('Show the authenticated user identity')
     .action(async (_opts: unknown, cmd: Command) => {
       const { output, instance: instanceFlag } = getGlobalOptions(cmd);
-      const instanceName = resolveInstanceOrExit(instanceFlag, output);
+      let instanceName: string;
+      try {
+        instanceName = resolveInstance(instanceFlag);
+      } catch (err) {
+        if (err instanceof CliError) {
+          return formatError(err.code, err.message, err.recovery, err.hints, output);
+        }
+        throw err;
+      }
 
       let ctx: Awaited<ReturnType<typeof getAuthenticatedContext>>;
       try {
@@ -31,15 +39,17 @@ export function createWhoamiCommand(): Command {
           const body = await resp.text();
           throw new Error(`HTTP ${resp.status}: ${body}`);
         }
-        const userinfo = (await resp.json()) as {
-          claims: { sub: string; ent?: string[] };
-        };
+        const body = await resp.json() as Record<string, unknown>;
+        const claims = body?.claims as Record<string, unknown> | undefined;
+        if (!claims || typeof claims.sub !== 'string') {
+          throw new Error('Unexpected userinfo response: missing claims.sub field');
+        }
 
         formatSuccess(
           {
             instance: ctx.instanceName,
-            userEntityRef: userinfo.claims.sub,
-            ownershipEntityRefs: userinfo.claims.ent ?? [],
+            userEntityRef: claims.sub,
+            ownershipEntityRefs: Array.isArray(claims.ent) ? claims.ent : [],
           },
           [],
           'read-only',
