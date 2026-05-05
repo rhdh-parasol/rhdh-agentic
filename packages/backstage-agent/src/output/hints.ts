@@ -2,10 +2,6 @@ export function tryCommand(command: string): string {
   return `Try: backstage-agent ${command}`;
 }
 
-export function toExecute(command: string): string {
-  return `To execute: backstage-agent ${command}`;
-}
-
 export function loginHint(): string {
   return tryCommand('auth login --backend-url <url>');
 }

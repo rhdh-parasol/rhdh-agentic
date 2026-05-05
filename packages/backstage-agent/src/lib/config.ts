@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
-import yaml from 'js-yaml';
+import YAML from 'yaml';
 
 export type TrustPolicy = 'read-only' | 'reversible' | 'all';
 
@@ -26,7 +26,7 @@ function getConfigPath(): string {
 export function readConfig(): Config {
   try {
     const content = readFileSync(getConfigPath(), 'utf-8');
-    const parsed = yaml.load(content) as Partial<Config> | null;
+    const parsed = YAML.parse(content) as Partial<Config> | null;
     return {
       trustPolicy: isValidTrustPolicy(parsed?.trustPolicy)
         ? parsed.trustPolicy
@@ -40,7 +40,7 @@ export function readConfig(): Config {
 export function writeConfig(config: Config): void {
   const dir = getConfigDir();
   mkdirSync(dir, { recursive: true });
-  writeFileSync(getConfigPath(), yaml.dump(config), 'utf-8');
+  writeFileSync(getConfigPath(), YAML.stringify(config), 'utf-8');
 }
 
 export function isValidTrustPolicy(value: unknown): value is TrustPolicy {

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mkdtempSync, rmSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import yaml from 'js-yaml';
+import YAML from 'yaml';
 
 let origHome: string;
 let origXdg: string | undefined;
@@ -26,7 +26,7 @@ function writeInstancesFile(instances: Array<Record<string, unknown>>): void {
   mkdirSync(dir, { recursive: true });
   writeFileSync(
     join(dir, 'auth-instances.yaml'),
-    yaml.dump({ instances }),
+    YAML.stringify({ instances }),
     'utf-8',
   );
 }

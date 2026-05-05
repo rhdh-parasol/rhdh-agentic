@@ -2,22 +2,38 @@ import http from 'node:http';
 import { URL } from 'node:url';
 
 const CALLBACK_PORT = 8055;
+const DEFAULT_TIMEOUT_MS = 5 * 60 * 1000;
 
-export async function startCallbackServer(options: { state: string }): Promise<{
+export async function startCallbackServer(options: {
+  state: string;
+  timeoutMs?: number;
+}): Promise<{
   url: string;
   waitForCode: () => Promise<{ code: string; state?: string }>;
   close: () => Promise<void>;
 }> {
   const server = http.createServer();
+  const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
 
   let resolveResult:
     | ((v: { code: string; state?: string }) => void)
     | undefined;
+  let rejectResult: ((err: Error) => void) | undefined;
+
   const resultPromise = new Promise<{ code: string; state?: string }>(
-    resolve => {
+    (resolve, reject) => {
       resolveResult = resolve;
+      rejectResult = reject;
     },
   );
+
+  const timer = setTimeout(() => {
+    rejectResult?.(
+      new Error(
+        `OAuth callback timed out after ${Math.round(timeoutMs / 1000)} seconds`,
+      ),
+    );
+  }, timeoutMs);
 
   server.on('request', (req, res) => {
     if (!req.url) {
@@ -46,6 +62,7 @@ export async function startCallbackServer(options: { state: string }): Promise<{
     res.statusCode = 200;
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.end('You may now close this window.');
+    clearTimeout(timer);
     resolveResult?.({ code, state });
   });
 
@@ -75,6 +92,7 @@ export async function startCallbackServer(options: { state: string }): Promise<{
     url: `http://127.0.0.1:${port}/callback`,
     waitForCode: () => resultPromise,
     close: async () => {
+      clearTimeout(timer);
       server.closeAllConnections();
       return new Promise<void>(resolve => server.close(() => resolve()));
     },

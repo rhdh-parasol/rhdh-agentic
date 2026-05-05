@@ -4,7 +4,7 @@ import { spawn } from 'node:child_process';
 import { createInterface } from 'node:readline';
 import { formatSuccess, formatError } from '../../output/formatter.js';
 import { readConfig, writeConfig, isValidTrustPolicy, TRUST_POLICY_VALUES, type TrustPolicy } from '../../lib/config.js';
-import { readInstances, upsertInstance, getInstanceByName } from '../../lib/instance.js';
+import { upsertInstance, getInstanceByName } from '../../lib/instance.js';
 import { getGlobalOptions } from '../../lib/globals.js';
 import { tryCommand } from '../../output/hints.js';
 import { generateVerifier, challengeFromVerifier } from '../../lib/pkce.js';
@@ -157,11 +157,6 @@ export function createLoginCommand(): Command {
       }
 
       const existing = getInstanceByName(instanceName);
-
-      const instances = readInstances();
-      for (const inst of instances) {
-        inst.selected = false;
-      }
 
       upsertInstance({
         name: instanceName,

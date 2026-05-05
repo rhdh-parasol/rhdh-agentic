@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, rmSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import yaml from 'js-yaml';
+import YAML from 'yaml';
 import { readInstances, writeInstances, upsertInstance, getInstanceByName, setSelectedInstance } from './instance.js';
 
 let origHome: string;
@@ -32,7 +32,7 @@ function writeInstancesFile(instances: Array<Record<string, unknown>>): void {
   mkdirSync(dir, { recursive: true });
   writeFileSync(
     join(dir, 'auth-instances.yaml'),
-    yaml.dump({ instances }),
+    YAML.stringify({ instances }),
     'utf-8',
   );
 }
@@ -157,5 +157,39 @@ describe('Instance Resolution', () => {
     const instances = readInstances();
     expect(instances.find(i => i.name === 'prod')?.selected).toBe(false);
     expect(instances.find(i => i.name === 'staging')?.selected).toBe(true);
+  });
+
+  it('upsertInstance with selected: true deselects all others', () => {
+    writeInstances([
+      {
+        name: 'alpha',
+        baseUrl: 'https://alpha.example.com',
+        clientId: 'cid-a',
+        issuedAt: 1000,
+        accessTokenExpiresAt: 2000,
+        selected: true,
+      },
+      {
+        name: 'beta',
+        baseUrl: 'https://beta.example.com',
+        clientId: 'cid-b',
+        issuedAt: 1000,
+        accessTokenExpiresAt: 2000,
+        selected: false,
+      },
+    ]);
+
+    upsertInstance({
+      name: 'beta',
+      baseUrl: 'https://beta.example.com',
+      clientId: 'cid-b',
+      issuedAt: 3000,
+      accessTokenExpiresAt: 4000,
+      selected: true,
+    });
+
+    const instances = readInstances();
+    expect(instances.find(i => i.name === 'alpha')?.selected).toBe(false);
+    expect(instances.find(i => i.name === 'beta')?.selected).toBe(true);
   });
 });

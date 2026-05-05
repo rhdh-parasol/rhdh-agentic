@@ -49,6 +49,11 @@ export function writeInstances(instances: StoredInstance[]): void {
 
 export function upsertInstance(instance: StoredInstance): void {
   const instances = readInstances();
+  if (instance.selected) {
+    for (const inst of instances) {
+      inst.selected = false;
+    }
+  }
   const idx = instances.findIndex(i => i.name === instance.name);
   if (idx === -1) {
     instances.push(instance);
@@ -84,10 +89,6 @@ export function setSelectedInstance(name: string): void {
 
 export function getInstanceByName(name: string): StoredInstance | undefined {
   return readInstances().find(i => i.name === name);
-}
-
-export function resolveInstanceName(flagValue: string | undefined): string | undefined {
-  return flagValue;
 }
 
 export function resolveInstanceOrExit(

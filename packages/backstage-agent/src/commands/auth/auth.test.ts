@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mkdtempSync, rmSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import yaml from 'js-yaml';
+import YAML from 'yaml';
 import { Command } from 'commander';
 import { createStatusCommand } from './status.js';
 import { createSelectCommand } from './select.js';
@@ -24,12 +24,12 @@ function instancesPath(): string {
 function writeInstancesFile(instances: Array<Record<string, unknown>>): void {
   const dir = join(tempHome, '.config', 'backstage-cli');
   mkdirSync(dir, { recursive: true });
-  writeFileSync(instancesPath(), yaml.dump({ instances }), 'utf-8');
+  writeFileSync(instancesPath(), YAML.stringify({ instances }), 'utf-8');
 }
 
 function readInstancesFile(): Array<Record<string, unknown>> {
   const content = readFileSync(instancesPath(), 'utf-8');
-  const parsed = yaml.load(content) as { instances: Array<Record<string, unknown>> };
+  const parsed = YAML.parse(content) as { instances: Array<Record<string, unknown>> };
   return parsed.instances;
 }
 

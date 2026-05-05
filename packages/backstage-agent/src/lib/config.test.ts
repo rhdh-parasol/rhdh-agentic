@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, rmSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import yaml from 'js-yaml';
+import YAML from 'yaml';
 import { readConfig, writeConfig, isValidTrustPolicy } from './config.js';
 
 let origHome: string;
@@ -38,7 +38,7 @@ describe('Config Management', () => {
       join(tempHome, '.config', 'backstage-agent', 'config.yaml'),
       'utf-8',
     );
-    const parsed = yaml.load(content) as { trustPolicy: string };
+    const parsed = YAML.parse(content) as { trustPolicy: string };
     expect(parsed.trustPolicy).toBe('reversible');
   });
 
