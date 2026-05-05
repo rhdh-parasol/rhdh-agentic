@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { homedir } from 'node:os';
 import YAML from 'yaml';
+import { getConfigRoot } from './paths.js';
 
 export type TrustPolicy = 'read-only' | 'reversible' | 'all';
 
@@ -16,12 +16,7 @@ const DEFAULT_CONFIG: Config = {
 };
 
 function getConfigDir(): string {
-  const root =
-    process.env.XDG_CONFIG_HOME ||
-    (process.platform === 'win32'
-      ? process.env.APPDATA || join(homedir(), 'AppData', 'Roaming')
-      : join(homedir(), '.config'));
-  return join(root, 'backstage-agent');
+  return join(getConfigRoot(), 'backstage-agent');
 }
 
 function getConfigPath(): string {
@@ -40,6 +35,11 @@ export function readConfig(): Config {
   }
 
   const parsed = YAML.parse(content) as Partial<Config> | null;
+  if (parsed?.trustPolicy !== undefined && !isValidTrustPolicy(parsed.trustPolicy)) {
+    throw new Error(
+      `Invalid trust policy "${parsed.trustPolicy}" in config.yaml. Valid values: ${TRUST_POLICY_VALUES.join(', ')}`,
+    );
+  }
   return {
     trustPolicy: isValidTrustPolicy(parsed?.trustPolicy)
       ? parsed.trustPolicy
@@ -50,7 +50,7 @@ export function readConfig(): Config {
 export function writeConfig(config: Config): void {
   const dir = getConfigDir();
   mkdirSync(dir, { recursive: true });
-  writeFileSync(getConfigPath(), YAML.stringify(config), 'utf-8');
+  writeFileSync(getConfigPath(), YAML.stringify(config), { encoding: 'utf-8', mode: 0o600 });
 }
 
 export function isValidTrustPolicy(value: unknown): value is TrustPolicy {

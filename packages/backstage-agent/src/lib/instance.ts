@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { homedir } from 'node:os';
 import YAML from 'yaml';
+import { getConfigRoot } from './paths.js';
 import { formatError, type OutputFormat } from '../output/formatter.js';
 import { loginHint, authStatusHint } from '../output/hints.js';
 
@@ -16,12 +16,7 @@ export interface StoredInstance {
 }
 
 function getConfigDir(): string {
-  const root =
-    process.env.XDG_CONFIG_HOME ||
-    (process.platform === 'win32'
-      ? process.env.APPDATA || join(homedir(), 'AppData', 'Roaming')
-      : join(homedir(), '.config'));
-  return join(root, 'backstage-cli');
+  return join(getConfigRoot(), 'backstage-cli');
 }
 
 function getInstancesPath(): string {
@@ -40,8 +35,21 @@ export function readInstances(): StoredInstance[] {
   }
 
   if (!content.trim()) return [];
-  const parsed = YAML.parse(content) as { instances?: StoredInstance[] } | null;
-  return parsed?.instances ?? [];
+  const parsed = YAML.parse(content) as Record<string, unknown> | null;
+  if (!parsed || !Array.isArray(parsed.instances)) {
+    return [];
+  }
+  return parsed.instances.filter(
+    (entry: unknown): entry is StoredInstance =>
+      typeof entry === 'object' &&
+      entry !== null &&
+      typeof (entry as Record<string, unknown>).name === 'string' &&
+      (entry as Record<string, unknown>).name !== '' &&
+      typeof (entry as Record<string, unknown>).baseUrl === 'string' &&
+      typeof (entry as Record<string, unknown>).clientId === 'string' &&
+      typeof (entry as Record<string, unknown>).issuedAt === 'number' &&
+      typeof (entry as Record<string, unknown>).accessTokenExpiresAt === 'number',
+  );
 }
 
 export function writeInstances(instances: StoredInstance[]): void {

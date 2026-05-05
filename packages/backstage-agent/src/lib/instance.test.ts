@@ -159,6 +159,39 @@ describe('Instance Resolution', () => {
     expect(instances.find(i => i.name === 'staging')?.selected).toBe(true);
   });
 
+  it('filters out invalid entries from instances file', () => {
+    const dir = join(tempHome, '.config', 'backstage-cli');
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      join(dir, 'auth-instances.yaml'),
+      YAML.stringify({
+        instances: [
+          makeInstance({ name: 'valid' }),
+          { name: '', baseUrl: 'https://empty-name.example.com' },
+          { baseUrl: 'https://missing-name.example.com' },
+          'not-an-object',
+        ],
+      }),
+      'utf-8',
+    );
+
+    const instances = readInstances();
+    expect(instances).toHaveLength(1);
+    expect(instances[0].name).toBe('valid');
+  });
+
+  it('returns empty array when instances field is not an array', () => {
+    const dir = join(tempHome, '.config', 'backstage-cli');
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      join(dir, 'auth-instances.yaml'),
+      'instances: not-an-array\n',
+      'utf-8',
+    );
+
+    expect(readInstances()).toEqual([]);
+  });
+
   it('upsertInstance with selected: true deselects all others', () => {
     writeInstances([
       {

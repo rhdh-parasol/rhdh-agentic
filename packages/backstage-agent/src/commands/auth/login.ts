@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import crypto from 'node:crypto';
 import { createInterface } from 'node:readline';
 import { formatSuccess, formatError } from '../../output/formatter.js';
-import { readConfig, writeConfig, isValidTrustPolicy, TRUST_POLICY_VALUES, type TrustPolicy } from '../../lib/config.js';
+import { readConfig, writeConfig, isValidTrustPolicy, TRUST_POLICY_VALUES } from '../../lib/config.js';
 import { upsertInstance, getInstanceByName } from '../../lib/instance.js';
 import { getGlobalOptions } from '../../lib/globals.js';
 import { tryCommand } from '../../output/hints.js';
@@ -22,7 +22,19 @@ export function createLoginCommand(): Command {
     .action(async (_opts: Record<string, unknown>, cmd: Command) => {
       const { output, instance: instanceFlag } = getGlobalOptions(cmd);
       const opts = cmd.opts();
-      const backendUrl: string = normalizeUrl(opts.backendUrl);
+      let backendUrl: string;
+      try {
+        backendUrl = normalizeUrl(opts.backendUrl);
+      } catch {
+        return formatError(
+          'USAGE_ERROR',
+          `Invalid backend URL: "${opts.backendUrl}"`,
+          'Provide a valid URL, e.g. --backend-url https://backstage.example.com',
+          [],
+          output,
+          2,
+        );
+      }
       const useBrowser: boolean = opts.browser !== false;
       const trustPolicyOpt: string | undefined = opts.trustPolicy;
 
@@ -87,7 +99,9 @@ export function createLoginCommand(): Command {
             state,
             challenge,
           });
-          openBrowser(authUrl);
+          if (!openBrowser(authUrl)) {
+            process.stderr.write(`Open this URL in your browser:\n\n${authUrl}\n\n`);
+          }
           const result = await callback.waitForCode();
           if (result.state !== state) {
             throw new Error('State mismatch');
@@ -136,10 +150,22 @@ export function createLoginCommand(): Command {
         const returnedState = parsed.searchParams.get('state');
 
         if (returnedState !== state) {
-          throw new Error('OAuth state mismatch');
+          return formatError(
+            'AUTH_ERROR',
+            'OAuth state mismatch — the callback does not match this login session',
+            'Try logging in again',
+            [tryCommand('auth login --backend-url ' + backendUrl)],
+            output,
+          );
         }
         if (!returnedCode) {
-          throw new Error('No authorization code in callback URL');
+          return formatError(
+            'AUTH_ERROR',
+            'No authorization code found in callback URL',
+            'Copy the full callback URL including the code parameter',
+            [tryCommand('auth login --backend-url ' + backendUrl)],
+            output,
+          );
         }
         code = returnedCode;
       }
@@ -148,8 +174,8 @@ export function createLoginCommand(): Command {
       try {
         const tokenResp = await fetch(`${authBaseUrl}/v1/token`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
             grant_type: 'authorization_code',
             code,
             redirect_uri: redirectUri,
@@ -202,9 +228,9 @@ export function createLoginCommand(): Command {
           metadata: existing?.metadata,
         });
 
-        if (trustPolicyOpt) {
+        if (trustPolicyOpt && isValidTrustPolicy(trustPolicyOpt)) {
           const config = readConfig();
-          config.trustPolicy = trustPolicyOpt as TrustPolicy;
+          config.trustPolicy = trustPolicyOpt;
           writeConfig(config);
         }
       } catch (err) {

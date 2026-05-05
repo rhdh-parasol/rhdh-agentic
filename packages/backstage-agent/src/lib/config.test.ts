@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdtempSync, rmSync, readFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, rmSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import YAML from 'yaml';
@@ -50,8 +50,15 @@ describe('Config Management', () => {
     expect(parsed.trustPolicy).toBe('reversible');
   });
 
-  it('falls back to default for invalid trustPolicy in file', () => {
+  it('throws for invalid trustPolicy in file', () => {
     writeConfig({ trustPolicy: 'bogus' as never });
+    expect(() => readConfig()).toThrow('Invalid trust policy "bogus"');
+  });
+
+  it('falls back to default when trustPolicy field is absent', () => {
+    const dir = join(tempHome, '.config', 'backstage-agent');
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, 'config.yaml'), 'someOtherField: true\n', 'utf-8');
     const config = readConfig();
     expect(config.trustPolicy).toBe('all');
   });

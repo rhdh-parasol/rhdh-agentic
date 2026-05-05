@@ -187,26 +187,28 @@ if (process.argv.length <= 2) {
 
   formatSuccess(data, hints, 'read-only', format);
 } else {
-  try {
-    program.parse(process.argv);
-  } catch (err: unknown) {
-    if (err && typeof err === 'object' && 'code' in err && typeof (err as { code: string }).code === 'string') {
-      const code = (err as { code: string }).code;
-      if (code === 'commander.helpDisplayed' || code === 'commander.version') {
-        process.exit(0);
+  (async () => {
+    try {
+      await program.parseAsync(process.argv);
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'code' in err && typeof (err as { code: string }).code === 'string') {
+        const code = (err as { code: string }).code;
+        if (code === 'commander.helpDisplayed' || code === 'commander.version') {
+          process.exit(0);
+        }
       }
-    }
 
-    const format: OutputFormat = program.opts().output === 'text' ? 'text' : 'json';
-    const rawMessage = err instanceof Error ? err.message : String(err);
-    const message = rawMessage.replace(/^error:\s*/i, '');
-    formatError(
-      'USAGE_ERROR',
-      message,
-      'Run with --help for usage information',
-      [tryCommand('--help')],
-      format,
-      2,
-    );
-  }
+      const format: OutputFormat = program.opts().output === 'text' ? 'text' : 'json';
+      const rawMessage = err instanceof Error ? err.message : String(err);
+      const message = rawMessage.replace(/^error:\s*/i, '');
+      formatError(
+        'USAGE_ERROR',
+        message,
+        'Run with --help for usage information',
+        [tryCommand('--help')],
+        format,
+        2,
+      );
+    }
+  })();
 }

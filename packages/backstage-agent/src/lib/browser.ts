@@ -1,14 +1,6 @@
 import { spawn } from 'node:child_process';
 
-export function openBrowser(url: string): void {
-  const handleError = (error: unknown) => {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    process.stderr.write(
-      `Warning: Failed to open browser automatically: ${message}\n`,
-    );
-    process.stderr.write(`Please open this URL manually: ${url}\n`);
-  };
-
+export function openBrowser(url: string): boolean {
   const spawnOpts = { detached: true, stdio: 'ignore' } as const;
   let child;
   try {
@@ -24,8 +16,9 @@ export function openBrowser(url: string): void {
       child = spawn('xdg-open', [url], spawnOpts);
     }
     child.unref();
-    child.on('error', handleError);
-  } catch (error) {
-    handleError(error);
+    child.on('error', () => {});
+    return true;
+  } catch {
+    return false;
   }
 }

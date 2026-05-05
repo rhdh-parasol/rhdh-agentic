@@ -1,6 +1,6 @@
 import { Command } from 'commander';
 import { formatSuccess, formatError } from '../../output/formatter.js';
-import { readConfig, writeConfig, isValidTrustPolicy, TRUST_POLICY_VALUES, type TrustPolicy } from '../../lib/config.js';
+import { readConfig, writeConfig, isValidTrustPolicy, TRUST_POLICY_VALUES } from '../../lib/config.js';
 import { getGlobalOptions } from '../../lib/globals.js';
 
 export function createSetTrustPolicyCommand(): Command {
@@ -23,7 +23,7 @@ export function createSetTrustPolicyCommand(): Command {
 
       try {
         const config = readConfig();
-        config.trustPolicy = level as TrustPolicy;
+        config.trustPolicy = level;
         writeConfig(config);
       } catch (err) {
         return formatError(
