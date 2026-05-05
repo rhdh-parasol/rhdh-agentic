@@ -62,7 +62,16 @@ export function createLoginCommand(): Command {
           throw new Error(`HTTP ${resp.status}`);
         }
         const clientConfig = (await resp.json()) as { client_id?: string };
-        clientId = clientConfig.client_id ?? clientConfigUrl;
+        if (!clientConfig.client_id) {
+          return formatError(
+            'SERVER_ERROR',
+            `Backstage instance at ${backendUrl} did not return a client_id in its OAuth client configuration`,
+            'Ensure the Backstage auth backend is properly configured with OAuth client metadata',
+            [],
+            output,
+          );
+        }
+        clientId = clientConfig.client_id;
       } catch (err) {
         return formatError(
           'CONNECTION_ERROR',
@@ -103,11 +112,7 @@ export function createLoginCommand(): Command {
             challenge,
           });
           process.stderr.write(`If a browser does not open, visit:\n\n${authUrl}\n\n`);
-          if (!openBrowser(authUrl)) {
-            process.stderr.write(
-              'Could not open a browser automatically. Please visit the URL above manually.\n',
-            );
-          }
+          openBrowser(authUrl);
           const result = await callback.waitForCode();
           if (result.state !== state) {
             throw new Error('State mismatch');
@@ -221,6 +226,12 @@ export function createLoginCommand(): Command {
           throw new Error(`Token exchange failed: ${tokenResp.status} ${body}`);
         }
         token = (await tokenResp.json()) as typeof token;
+        const missingFields: string[] = [];
+        if (!token.access_token) missingFields.push('access_token');
+        if (typeof token.expires_in !== 'number') missingFields.push('expires_in');
+        if (missingFields.length > 0) {
+          throw new Error(`Invalid token response: missing ${missingFields.join(', ')}`);
+        }
       } catch (err) {
         return formatError(
           'AUTH_ERROR',
