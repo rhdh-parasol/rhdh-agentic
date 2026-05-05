@@ -10,7 +10,7 @@ import { resetSecretStore } from '../../lib/secretStore.js';
 vi.mock('node:readline', () => ({
   createInterface: vi.fn(() => ({
     question: (_prompt: string, cb: (answer: string) => void) => {
-      const writes = vi.mocked(process.stdout.write).mock.calls;
+      const writes = vi.mocked(process.stderr.write).mock.calls;
       const authUrlLine = writes
         .map(c => String(c[0]))
         .find(s => s.includes('/v1/authorize'));
@@ -229,7 +229,8 @@ describe('auth login', () => {
       ]),
     ).rejects.toThrow('process.exit called');
 
-    const output = JSON.parse(stderrWrite.mock.calls[0][0] as string);
+    const jsonCall = stderrWrite.mock.calls.find(c => String(c[0]).startsWith('{'));
+    const output = JSON.parse(jsonCall![0] as string);
     expect(output.error.code).toBe('AUTH_ERROR');
     expect(output.error.message).toContain('Token exchange failed');
   });

@@ -1,6 +1,5 @@
 import { Command } from 'commander';
 import crypto from 'node:crypto';
-import { spawn } from 'node:child_process';
 import { createInterface } from 'node:readline';
 import { formatSuccess, formatError } from '../../output/formatter.js';
 import { readConfig, writeConfig, isValidTrustPolicy, TRUST_POLICY_VALUES, type TrustPolicy } from '../../lib/config.js';
@@ -9,6 +8,7 @@ import { getGlobalOptions } from '../../lib/globals.js';
 import { tryCommand } from '../../output/hints.js';
 import { generateVerifier, challengeFromVerifier } from '../../lib/pkce.js';
 import { startCallbackServer } from '../../lib/localServer.js';
+import { openBrowser } from '../../lib/browser.js';
 import { getSecretStore, getAuthInstanceService } from '../../lib/secretStore.js';
 
 const TOKEN_EXCHANGE_TIMEOUT_MS = 30_000;
@@ -86,6 +86,7 @@ export function createLoginCommand(): Command {
           await callback.close();
         }
       } else {
+        // Placeholder URI for manual paste-back flow — no server listens on this.
         redirectUri = 'http://localhost:0/callback';
         const authUrl = buildAuthorizeUrl({
           authBaseUrl,
@@ -95,12 +96,12 @@ export function createLoginCommand(): Command {
           challenge,
         });
 
-        process.stdout.write(`Open this URL in your browser:\n\n${authUrl}\n\n`);
-        process.stdout.write(
+        process.stderr.write(`Open this URL in your browser:\n\n${authUrl}\n\n`);
+        process.stderr.write(
           'After authenticating, paste the callback URL here:\n',
         );
 
-        const rl = createInterface({ input: process.stdin, output: process.stdout });
+        const rl = createInterface({ input: process.stdin, output: process.stderr });
         const callbackUrl = await new Promise<string>(resolve => {
           rl.question('> ', answer => {
             rl.close();
@@ -217,34 +218,4 @@ function buildAuthorizeUrl(options: {
   authorize.searchParams.set('code_challenge', challenge);
   authorize.searchParams.set('code_challenge_method', 'S256');
   return authorize.toString();
-}
-
-function openBrowser(url: string): void {
-  const handleError = (error: unknown) => {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    process.stderr.write(
-      `Warning: Failed to open browser automatically: ${message}\n`,
-    );
-    process.stderr.write(`Please open this URL manually: ${url}\n`);
-  };
-
-  const spawnOpts = { detached: true, stdio: 'ignore' } as const;
-  let child;
-  try {
-    if (process.platform === 'darwin') {
-      child = spawn('open', [url], spawnOpts);
-    } else if (process.platform === 'win32') {
-      child = spawn(
-        'powershell',
-        ['-Command', `Start-Process '${url.replace(/'/g, "''")}'`],
-        spawnOpts,
-      );
-    } else {
-      child = spawn('xdg-open', [url], spawnOpts);
-    }
-    child.unref();
-    child.on('error', handleError);
-  } catch (error) {
-    handleError(error);
-  }
 }
