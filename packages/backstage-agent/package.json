@@ -1,0 +1,29 @@
+{
+  "name": "backstage-agent",
+  "version": "0.1.0",
+  "description": "Intent-based CLI for AI coding agents to interact with Backstage",
+  "license": "Apache-2.0",
+  "type": "module",
+  "bin": {
+    "backstage-agent": "./bin/backstage-agent"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@backstage/cli-node": "^0.3.1",
+    "commander": "^13.1.0",
+    "js-yaml": "^4.1.0",
+    "yaml": "^2.8.4"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^22.15.3",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.3"
+  }
+}

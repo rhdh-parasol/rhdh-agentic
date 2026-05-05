@@ -120,6 +120,32 @@ The CLI SHALL provide `backstage-agent auth logout` that removes stored credenti
 - **THEN** no instance is marked as `selected: true`
 - **AND** `hints` suggests `backstage-agent auth select <name>` to select an instance
 
+### Requirement: Auth whoami
+
+The CLI SHALL provide `backstage-agent auth whoami` that calls the Backstage `/api/auth/v1/userinfo` endpoint with the stored access token and returns the authenticated user's identity.
+
+#### Scenario: Successful whoami
+
+- **WHEN** a user runs `backstage-agent auth whoami` with a valid token
+- **THEN** the output envelope `data` contains `instance` (the instance name), `userEntityRef` (e.g., `user:default/guest`), and `ownershipEntityRefs` (array of ownership entity refs)
+- **AND** trust level is `read-only`
+
+#### Scenario: Whoami with expired or missing token
+
+- **WHEN** a user runs `backstage-agent auth whoami` without a valid token
+- **THEN** the CLI exits with code `1`
+- **AND** the error envelope contains `AUTH_ERROR`
+- **AND** `hints` suggests running `auth login`
+
+### Requirement: Auth whoami trust level
+
+The `auth whoami` command SHALL be classified as trust level `read-only` because it only reads user identity from the backend without modifying any state.
+
+#### Scenario: Whoami trust level in help
+
+- **WHEN** a user runs `backstage-agent auth whoami --help`
+- **THEN** the help output includes `Trust level: read-only`
+
 ### Requirement: Shared credential storage
 
 The CLI SHALL store and read credentials using the same paths and format as backstage-cli: `~/.config/backstage-cli/auth-instances.yaml` for instance metadata and `~/.local/share/backstage-cli/auth-secrets/` for tokens. Token retrieval and refresh SHALL be delegated to `CliAuth` from `@backstage/cli-node`.
