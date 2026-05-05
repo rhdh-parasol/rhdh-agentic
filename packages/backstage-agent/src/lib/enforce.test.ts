@@ -6,14 +6,17 @@ import { enforceTrustPolicy } from './enforce.js';
 import { writeConfig } from './config.js';
 
 let origHome: string;
+let origXdg: string | undefined;
 let tempHome: string;
 let stderrWrite: ReturnType<typeof vi.spyOn>;
 let processExit: ReturnType<typeof vi.spyOn>;
 
 beforeEach(() => {
   origHome = process.env.HOME!;
+  origXdg = process.env.XDG_CONFIG_HOME;
   tempHome = mkdtempSync(join(tmpdir(), 'backstage-agent-test-'));
   process.env.HOME = tempHome;
+  delete process.env.XDG_CONFIG_HOME;
   stderrWrite = vi.spyOn(process.stderr, 'write').mockReturnValue(true);
   processExit = vi.spyOn(process, 'exit').mockImplementation(() => {
     throw new Error('process.exit called');
@@ -22,6 +25,11 @@ beforeEach(() => {
 
 afterEach(() => {
   process.env.HOME = origHome;
+  if (origXdg !== undefined) {
+    process.env.XDG_CONFIG_HOME = origXdg;
+  } else {
+    delete process.env.XDG_CONFIG_HOME;
+  }
   rmSync(tempHome, { recursive: true, force: true });
 });
 
