@@ -6,16 +6,24 @@ import YAML from 'yaml';
 import { readConfig, writeConfig, isValidTrustPolicy } from './config.js';
 
 let origHome: string;
+let origXdg: string | undefined;
 let tempHome: string;
 
 beforeEach(() => {
   origHome = process.env.HOME!;
+  origXdg = process.env.XDG_CONFIG_HOME;
   tempHome = mkdtempSync(join(tmpdir(), 'backstage-agent-test-'));
   process.env.HOME = tempHome;
+  delete process.env.XDG_CONFIG_HOME;
 });
 
 afterEach(() => {
   process.env.HOME = origHome;
+  if (origXdg !== undefined) {
+    process.env.XDG_CONFIG_HOME = origXdg;
+  } else {
+    delete process.env.XDG_CONFIG_HOME;
+  }
   rmSync(tempHome, { recursive: true, force: true });
 });
 
@@ -46,6 +54,23 @@ describe('Config Management', () => {
     writeConfig({ trustPolicy: 'bogus' as never });
     const config = readConfig();
     expect(config.trustPolicy).toBe('all');
+  });
+
+  it('respects XDG_CONFIG_HOME', () => {
+    const xdgDir = join(tempHome, 'custom-config');
+    process.env.XDG_CONFIG_HOME = xdgDir;
+
+    writeConfig({ trustPolicy: 'read-only' });
+
+    const content = readFileSync(
+      join(xdgDir, 'backstage-agent', 'config.yaml'),
+      'utf-8',
+    );
+    const parsed = YAML.parse(content) as { trustPolicy: string };
+    expect(parsed.trustPolicy).toBe('read-only');
+
+    const config = readConfig();
+    expect(config.trustPolicy).toBe('read-only');
   });
 });
 

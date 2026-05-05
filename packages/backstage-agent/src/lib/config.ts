@@ -16,7 +16,12 @@ const DEFAULT_CONFIG: Config = {
 };
 
 function getConfigDir(): string {
-  return join(homedir(), '.config', 'backstage-agent');
+  const root =
+    process.env.XDG_CONFIG_HOME ||
+    (process.platform === 'win32'
+      ? process.env.APPDATA || join(homedir(), 'AppData', 'Roaming')
+      : join(homedir(), '.config'));
+  return join(root, 'backstage-agent');
 }
 
 function getConfigPath(): string {
