@@ -1,5 +1,16 @@
 export type TrustLevel = 'read-only' | 'reversible' | 'destructive';
 
+export type ErrorCode =
+  | 'AUTH_ERROR'
+  | 'CONNECTION_ERROR'
+  | 'INSTANCE_NOT_FOUND'
+  | 'NO_AUTH_INSTANCE'
+  | 'NO_SELECTED_INSTANCE'
+  | 'SERVER_ERROR'
+  | 'STORAGE_ERROR'
+  | 'TRUST_POLICY_VIOLATION'
+  | 'USAGE_ERROR';
+
 export interface SuccessEnvelope<T = unknown> {
   data: T;
   hints: string[];
@@ -8,7 +19,7 @@ export interface SuccessEnvelope<T = unknown> {
 }
 
 export interface ErrorDetail {
-  code: string;
+  code: ErrorCode;
   message: string;
   recovery: string;
 }
@@ -40,7 +51,7 @@ export function formatSuccess<T>(
 }
 
 export function formatError(
-  code: string,
+  code: ErrorCode,
   message: string,
   recovery: string,
   hints: string[],

@@ -30,7 +30,7 @@ afterEach(() => {
 describe('Config Management', () => {
   it('returns default config when no file exists', () => {
     const config = readConfig();
-    expect(config.trustPolicy).toBe('all');
+    expect(config.trustPolicy).toBe('read-only');
   });
 
   it('reads trustPolicy from config file', () => {
@@ -60,7 +60,7 @@ describe('Config Management', () => {
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, 'config.yaml'), 'someOtherField: true\n', 'utf-8');
     const config = readConfig();
-    expect(config.trustPolicy).toBe('all');
+    expect(config.trustPolicy).toBe('read-only');
   });
 
   it('respects XDG_CONFIG_HOME', () => {

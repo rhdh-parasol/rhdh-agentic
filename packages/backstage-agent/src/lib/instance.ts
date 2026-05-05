@@ -40,15 +40,28 @@ export function readInstances(): StoredInstance[] {
     return [];
   }
   return parsed.instances.filter(
-    (entry: unknown): entry is StoredInstance =>
-      typeof entry === 'object' &&
-      entry !== null &&
-      typeof (entry as Record<string, unknown>).name === 'string' &&
-      (entry as Record<string, unknown>).name !== '' &&
-      typeof (entry as Record<string, unknown>).baseUrl === 'string' &&
-      typeof (entry as Record<string, unknown>).clientId === 'string' &&
-      typeof (entry as Record<string, unknown>).issuedAt === 'number' &&
-      typeof (entry as Record<string, unknown>).accessTokenExpiresAt === 'number',
+    (entry: unknown, index: number): entry is StoredInstance => {
+      if (typeof entry !== 'object' || entry === null) {
+        process.stderr.write(
+          `Warning: skipping malformed instance entry at index ${index} in auth-instances.yaml (not an object)\n`,
+        );
+        return false;
+      }
+      const obj = entry as Record<string, unknown>;
+      const missing: string[] = [];
+      if (typeof obj.name !== 'string' || obj.name === '') missing.push('name');
+      if (typeof obj.baseUrl !== 'string') missing.push('baseUrl');
+      if (typeof obj.clientId !== 'string') missing.push('clientId');
+      if (typeof obj.issuedAt !== 'number') missing.push('issuedAt');
+      if (typeof obj.accessTokenExpiresAt !== 'number') missing.push('accessTokenExpiresAt');
+      if (missing.length > 0) {
+        process.stderr.write(
+          `Warning: skipping malformed instance entry at index ${index} in auth-instances.yaml (invalid fields: ${missing.join(', ')})\n`,
+        );
+        return false;
+      }
+      return true;
+    },
   );
 }
 

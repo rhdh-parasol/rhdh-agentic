@@ -43,8 +43,11 @@ describe('Trust Policy Enforcement', () => {
     expect(() => enforceTrustPolicy('catalog list', 'read-only', 'json')).not.toThrow();
   });
 
-  it('allows all commands under default policy', () => {
-    expect(() => enforceTrustPolicy('templates execute', 'destructive', 'json')).not.toThrow();
+  it('blocks destructive commands under default read-only policy', () => {
+    expect(() => enforceTrustPolicy('templates execute', 'destructive', 'json')).toThrow('process.exit called');
+
+    const output = JSON.parse(stderrWrite.mock.calls[0][0] as string);
+    expect(output.error.code).toBe('TRUST_POLICY_VIOLATION');
   });
 
   it('produces TRUST_POLICY_VIOLATION error envelope', () => {

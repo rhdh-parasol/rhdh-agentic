@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mkdtempSync, rmSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import YAML from 'yaml';
-import { readInstances, writeInstances, upsertInstance, getInstanceByName, setSelectedInstance } from './instance.js';
+import { readInstances, writeInstances, upsertInstance, getInstanceByName, setSelectedInstance, removeInstance, resolveInstanceOrExit } from './instance.js';
 
 let origHome: string;
 let origXdg: string | undefined;
@@ -192,6 +192,58 @@ describe('Instance Resolution', () => {
     expect(readInstances()).toEqual([]);
   });
 
+  it('removeInstance removes an existing instance', () => {
+    writeInstances([
+      {
+        name: 'alpha',
+        baseUrl: 'https://alpha.example.com',
+        clientId: 'cid-a',
+        issuedAt: 1000,
+        accessTokenExpiresAt: 2000,
+        selected: true,
+      },
+      {
+        name: 'beta',
+        baseUrl: 'https://beta.example.com',
+        clientId: 'cid-b',
+        issuedAt: 1000,
+        accessTokenExpiresAt: 2000,
+        selected: false,
+      },
+    ]);
+
+    removeInstance('alpha');
+
+    const instances = readInstances();
+    expect(instances).toHaveLength(1);
+    expect(instances[0].name).toBe('beta');
+  });
+
+  it('removeInstance is a no-op for nonexistent instance', () => {
+    writeInstances([
+      {
+        name: 'alpha',
+        baseUrl: 'https://alpha.example.com',
+        clientId: 'cid-a',
+        issuedAt: 1000,
+        accessTokenExpiresAt: 2000,
+        selected: true,
+      },
+    ]);
+
+    removeInstance('nonexistent');
+
+    const instances = readInstances();
+    expect(instances).toHaveLength(1);
+    expect(instances[0].name).toBe('alpha');
+  });
+
+  it('setSelectedInstance throws for unknown instance', () => {
+    writeInstancesFile([makeInstance({ name: 'prod' })]);
+
+    expect(() => setSelectedInstance('nonexistent')).toThrow("Unknown instance 'nonexistent'");
+  });
+
   it('upsertInstance with selected: true deselects all others', () => {
     writeInstances([
       {
@@ -224,5 +276,69 @@ describe('Instance Resolution', () => {
     const instances = readInstances();
     expect(instances.find(i => i.name === 'alpha')?.selected).toBe(false);
     expect(instances.find(i => i.name === 'beta')?.selected).toBe(true);
+  });
+});
+
+describe('resolveInstanceOrExit', () => {
+  let stderrWrite: ReturnType<typeof vi.spyOn>;
+  let processExit: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    stderrWrite = vi.spyOn(process.stderr, 'write').mockReturnValue(true);
+    processExit = vi.spyOn(process, 'exit').mockImplementation(() => {
+      throw new Error('process.exit called');
+    });
+  });
+
+  afterEach(() => {
+    stderrWrite.mockRestore();
+    processExit.mockRestore();
+  });
+
+  it('returns the flag value when instance exists', () => {
+    writeInstancesFile([makeInstance({ name: 'prod', selected: true })]);
+
+    const result = resolveInstanceOrExit('prod', 'json');
+    expect(result).toBe('prod');
+  });
+
+  it('returns the selected instance name when no flag given', () => {
+    writeInstancesFile([makeInstance({ name: 'prod', selected: true })]);
+
+    const result = resolveInstanceOrExit(undefined, 'json');
+    expect(result).toBe('prod');
+  });
+
+  it('exits with INSTANCE_NOT_FOUND for unknown --instance flag', () => {
+    writeInstancesFile([makeInstance({ name: 'prod', selected: true })]);
+
+    expect(() => resolveInstanceOrExit('nonexistent', 'json'))
+      .toThrow('process.exit called');
+
+    const output = JSON.parse(stderrWrite.mock.calls[0][0] as string);
+    expect(output.error.code).toBe('INSTANCE_NOT_FOUND');
+    expect(output.error.message).toContain('nonexistent');
+    expect(output.error.recovery).toContain('prod');
+  });
+
+  it('exits with NO_AUTH_INSTANCE when no instances configured', () => {
+    expect(() => resolveInstanceOrExit(undefined, 'json'))
+      .toThrow('process.exit called');
+
+    const output = JSON.parse(stderrWrite.mock.calls[0][0] as string);
+    expect(output.error.code).toBe('NO_AUTH_INSTANCE');
+  });
+
+  it('exits with NO_SELECTED_INSTANCE when none selected', () => {
+    writeInstancesFile([
+      makeInstance({ name: 'prod', selected: false }),
+      makeInstance({ name: 'staging', selected: false }),
+    ]);
+
+    expect(() => resolveInstanceOrExit(undefined, 'json'))
+      .toThrow('process.exit called');
+
+    const output = JSON.parse(stderrWrite.mock.calls[0][0] as string);
+    expect(output.error.code).toBe('NO_SELECTED_INSTANCE');
   });
 });

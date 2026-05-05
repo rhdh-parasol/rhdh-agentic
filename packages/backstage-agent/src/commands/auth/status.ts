@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { formatSuccess } from '../../output/formatter.js';
+import { formatSuccess, formatError } from '../../output/formatter.js';
 import { readInstances } from '../../lib/instance.js';
 import { getGlobalOptions } from '../../lib/globals.js';
 import { loginHint } from '../../output/hints.js';
@@ -9,7 +9,19 @@ export function createStatusCommand(): Command {
     .description('Show authenticated Backstage instances')
     .action((_opts: unknown, cmd: Command) => {
       const { output } = getGlobalOptions(cmd);
-      const instances = readInstances();
+
+      let instances;
+      try {
+        instances = readInstances();
+      } catch (err) {
+        return formatError(
+          'STORAGE_ERROR',
+          `Failed to read instance data: ${err instanceof Error ? err.message : String(err)}`,
+          'Check that your auth-instances.yaml file is valid YAML',
+          [loginHint()],
+          output,
+        );
+      }
 
       const hints =
         instances.length === 0

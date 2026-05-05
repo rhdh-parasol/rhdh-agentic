@@ -163,29 +163,61 @@ configGroup.addCommand(setTrustPolicyCmd);
 
 program.addCommand(configGroup);
 
-// No-arg status summary
-if (process.argv.length <= 2) {
-  const format: OutputFormat = 'json';
-  const instances = readInstances();
-  const selected = instances.find(i => i.selected);
-  const config = readConfig();
+function hasSubcommand(argv: string[]): boolean {
+  const args = argv.slice(2);
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === '-V' || arg === '--version' || arg === '-h' || arg === '--help') {
+      return true;
+    }
+    if (arg === '--output' || arg === '--instance') {
+      i++;
+      continue;
+    }
+    if (arg.startsWith('--')) continue;
+    return true;
+  }
+  return false;
+}
 
-  const data = {
-    instance: selected
-      ? { name: selected.name, authenticated: true }
-      : null,
-    trustPolicy: config.trustPolicy,
-    commandGroups: [
-      { name: 'auth', description: 'Authentication and instance management' },
-      { name: 'config', description: 'CLI configuration' },
-    ],
-  };
+if (!hasSubcommand(process.argv)) {
+  const format: OutputFormat =
+    process.argv.includes('--output') &&
+    process.argv[process.argv.indexOf('--output') + 1] === 'text'
+      ? 'text'
+      : 'json';
 
-  const hints = selected
-    ? [tryCommand('auth status'), tryCommand('config set-trust-policy')]
-    : [loginHint()];
+  try {
+    const instances = readInstances();
+    const config = readConfig();
 
-  formatSuccess(data, hints, 'read-only', format);
+    const selected = instances.find(i => i.selected);
+
+    const data = {
+      instance: selected
+        ? { name: selected.name, authenticated: true }
+        : null,
+      trustPolicy: config.trustPolicy,
+      commandGroups: [
+        { name: 'auth', description: 'Authentication and instance management' },
+        { name: 'config', description: 'CLI configuration' },
+      ],
+    };
+
+    const hints = selected
+      ? [tryCommand('auth status'), tryCommand('config set-trust-policy')]
+      : [loginHint()];
+
+    formatSuccess(data, hints, 'read-only', format);
+  } catch (err) {
+    formatError(
+      'STORAGE_ERROR',
+      `Failed to read configuration: ${err instanceof Error ? err.message : String(err)}`,
+      'Check that your config files are valid YAML',
+      [],
+      format,
+    );
+  }
 } else {
   (async () => {
     try {

@@ -121,9 +121,9 @@ Paths respect `XDG_CONFIG_HOME` and `XDG_DATA_HOME` when set.
 
 Commands declare a trust level (`read-only`, `reversible`, `destructive`). The configured trust policy blocks commands that exceed it:
 
-- **read-only** — only allow commands that read data
+- **read-only** (default) — only allow commands that read data
 - **reversible** — allow read-only and reversible commands
-- **all** (default) — allow everything
+- **all** — allow everything
 
 Auth and config commands are exempt from enforcement.
 
@@ -142,7 +142,7 @@ src/
     config/
       set-trust-policy.ts
   lib/
-    auth.ts             # Authenticated fetch via CliAuth (@backstage/cli-node)
+    auth.ts             # Authenticated fetch via own secretStore (avoids CliAuth)
     config.ts           # CLI config (~/.config/backstage-agent/config.yaml)
     instance.ts         # Instance storage (~/.config/backstage-cli/auth-instances.yaml)
     secretStore.ts      # Token storage (~/.local/share/backstage-cli/auth-secrets/)

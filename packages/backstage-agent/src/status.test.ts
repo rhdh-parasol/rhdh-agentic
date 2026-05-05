@@ -70,7 +70,7 @@ describe('No-arg status summary (CLI entrypoint)', () => {
     const output = runCli();
     const data = output.data as Record<string, unknown>;
     expect(data.instance).toEqual({ name: 'prod', authenticated: true });
-    expect(data.trustPolicy).toBe('all');
+    expect(data.trustPolicy).toBe('read-only');
     expect(data.commandGroups).toHaveLength(2);
     expect(output.trustLevel).toBe('read-only');
   });

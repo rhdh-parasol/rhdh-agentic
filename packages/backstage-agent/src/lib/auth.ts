@@ -6,6 +6,8 @@
 import { getSecretStore, getAuthInstanceService } from './secretStore.js';
 import { readInstances } from './instance.js';
 
+const DEFAULT_FETCH_TIMEOUT_MS = 30_000;
+
 export interface AuthenticatedContext {
   fetch: (url: string, init?: RequestInit) => Promise<Response>;
   baseUrl: string;
@@ -22,12 +24,19 @@ export async function getAuthenticatedContext(
     );
   }
 
-  const instance = instanceName
-    ? instances.find(i => i.name === instanceName)
-    : instances.find(i => i.selected) ?? instances[0];
-
-  if (!instance) {
-    throw new Error(`Instance '${instanceName}' not found`);
+  let instance;
+  if (instanceName) {
+    instance = instances.find(i => i.name === instanceName);
+    if (!instance) {
+      throw new Error(`Instance '${instanceName}' not found`);
+    }
+  } else {
+    instance = instances.find(i => i.selected);
+    if (!instance) {
+      throw new Error(
+        'No instance is currently selected. Run "auth select <name>" to select one.',
+      );
+    }
   }
 
   const store = getSecretStore();
@@ -45,7 +54,8 @@ export async function getAuthenticatedContext(
     }
     const headers = new Headers(init?.headers);
     headers.set('Authorization', `Bearer ${token}`);
-    return fetch(url, { ...init, headers });
+    const signal = init?.signal ?? AbortSignal.timeout(DEFAULT_FETCH_TIMEOUT_MS);
+    return fetch(url, { ...init, headers, signal });
   };
 
   return {

@@ -3,16 +3,16 @@ import { join } from 'node:path';
 import YAML from 'yaml';
 import { getConfigRoot } from './paths.js';
 
-export type TrustPolicy = 'read-only' | 'reversible' | 'all';
+export const TRUST_POLICY_VALUES = ['read-only', 'reversible', 'all'] as const;
 
-export const TRUST_POLICY_VALUES: TrustPolicy[] = ['read-only', 'reversible', 'all'];
+export type TrustPolicy = (typeof TRUST_POLICY_VALUES)[number];
 
 interface Config {
   trustPolicy: TrustPolicy;
 }
 
 const DEFAULT_CONFIG: Config = {
-  trustPolicy: 'all',
+  trustPolicy: 'read-only',
 };
 
 function getConfigDir(): string {
@@ -54,5 +54,5 @@ export function writeConfig(config: Config): void {
 }
 
 export function isValidTrustPolicy(value: unknown): value is TrustPolicy {
-  return typeof value === 'string' && TRUST_POLICY_VALUES.includes(value as TrustPolicy);
+  return typeof value === 'string' && (TRUST_POLICY_VALUES as readonly string[]).includes(value);
 }

@@ -4,14 +4,16 @@ import { URL } from 'node:url';
 const CALLBACK_PORT = 8055;
 const DEFAULT_TIMEOUT_MS = 5 * 60 * 1000;
 
-export async function startCallbackServer(options: {
-  state: string;
-  timeoutMs?: number;
-}): Promise<{
+export interface CallbackServer {
   url: string;
   waitForCode: () => Promise<{ code: string; state?: string }>;
   close: () => Promise<void>;
-}> {
+}
+
+export async function startCallbackServer(options: {
+  state: string;
+  timeoutMs?: number;
+}): Promise<CallbackServer> {
   const server = http.createServer();
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
 
@@ -52,11 +54,17 @@ export async function startCallbackServer(options: {
     if (!code) {
       res.statusCode = 400;
       res.end('Missing code');
+      process.stderr.write(
+        'Warning: received OAuth callback without authorization code. Waiting for valid callback...\n',
+      );
       return;
     }
     if (state !== options.state) {
       res.statusCode = 400;
       res.end('State mismatch');
+      process.stderr.write(
+        'Warning: received OAuth callback with mismatched state parameter. Waiting for valid callback...\n',
+      );
       return;
     }
     res.statusCode = 200;

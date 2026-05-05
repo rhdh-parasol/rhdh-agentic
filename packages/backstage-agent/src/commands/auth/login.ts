@@ -7,7 +7,7 @@ import { upsertInstance, getInstanceByName } from '../../lib/instance.js';
 import { getGlobalOptions } from '../../lib/globals.js';
 import { tryCommand } from '../../output/hints.js';
 import { generateVerifier, challengeFromVerifier } from '../../lib/pkce.js';
-import { startCallbackServer } from '../../lib/localServer.js';
+import { startCallbackServer, type CallbackServer } from '../../lib/localServer.js';
 import { openBrowser } from '../../lib/browser.js';
 import { getSecretStore, getAuthInstanceService } from '../../lib/secretStore.js';
 
@@ -51,15 +51,18 @@ export function createLoginCommand(): Command {
 
       const instanceName = instanceFlag ?? deriveInstanceName(backendUrl);
       const authBaseUrl = `${backendUrl}/api/auth`;
-      const clientId = `${authBaseUrl}/.well-known/oauth-client/cli.json`;
+      const clientConfigUrl = `${authBaseUrl}/.well-known/oauth-client/cli.json`;
 
+      let clientId: string;
       try {
-        const resp = await fetch(clientId, {
+        const resp = await fetch(clientConfigUrl, {
           signal: AbortSignal.timeout(TOKEN_EXCHANGE_TIMEOUT_MS),
         });
         if (!resp.ok) {
           throw new Error(`HTTP ${resp.status}`);
         }
+        const clientConfig = (await resp.json()) as { client_id?: string };
+        clientId = clientConfig.client_id ?? clientConfigUrl;
       } catch (err) {
         return formatError(
           'CONNECTION_ERROR',
@@ -78,7 +81,7 @@ export function createLoginCommand(): Command {
       let redirectUri: string;
 
       if (useBrowser) {
-        let callback: Awaited<ReturnType<typeof startCallbackServer>>;
+        let callback: CallbackServer;
         try {
           callback = await startCallbackServer({ state });
         } catch (err) {
@@ -99,14 +102,26 @@ export function createLoginCommand(): Command {
             state,
             challenge,
           });
+          process.stderr.write(`If a browser does not open, visit:\n\n${authUrl}\n\n`);
           if (!openBrowser(authUrl)) {
-            process.stderr.write(`Open this URL in your browser:\n\n${authUrl}\n\n`);
+            process.stderr.write(
+              'Could not open a browser automatically. Please visit the URL above manually.\n',
+            );
           }
           const result = await callback.waitForCode();
           if (result.state !== state) {
             throw new Error('State mismatch');
           }
           code = result.code;
+        } catch (err) {
+          await callback.close();
+          return formatError(
+            'AUTH_ERROR',
+            `OAuth callback failed: ${err instanceof Error ? err.message : String(err)}`,
+            'Try logging in again',
+            [tryCommand('auth login --backend-url ' + backendUrl)],
+            output,
+          );
         } finally {
           await callback.close();
         }
@@ -126,13 +141,30 @@ export function createLoginCommand(): Command {
           'After authenticating, paste the callback URL here:\n',
         );
 
-        const rl = createInterface({ input: process.stdin, output: process.stderr });
-        const callbackUrl = await new Promise<string>(resolve => {
-          rl.question('> ', answer => {
-            rl.close();
-            resolve(answer.trim());
+        let callbackUrl: string;
+        try {
+          const rl = createInterface({ input: process.stdin, output: process.stderr });
+          const MANUAL_PASTE_TIMEOUT_MS = 5 * 60 * 1000;
+          callbackUrl = await new Promise<string>((resolve, reject) => {
+            const timer = setTimeout(() => {
+              rl.close();
+              reject(new Error('Timed out waiting for callback URL input'));
+            }, MANUAL_PASTE_TIMEOUT_MS);
+            rl.question('> ', answer => {
+              clearTimeout(timer);
+              rl.close();
+              resolve(answer.trim());
+            });
           });
-        });
+        } catch (err) {
+          return formatError(
+            'AUTH_ERROR',
+            err instanceof Error ? err.message : 'Timed out waiting for callback URL input',
+            'Try logging in again',
+            [tryCommand('auth login --backend-url ' + backendUrl)],
+            output,
+          );
+        }
 
         let parsed: URL;
         try {
@@ -180,6 +212,7 @@ export function createLoginCommand(): Command {
             code,
             redirect_uri: redirectUri,
             code_verifier: verifier,
+            client_id: clientId,
           }),
           signal: AbortSignal.timeout(TOKEN_EXCHANGE_TIMEOUT_MS),
         });

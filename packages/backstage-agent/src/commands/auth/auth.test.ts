@@ -184,4 +184,51 @@ describe('auth logout', () => {
     expect(instances[0].name).toBe('staging');
     expect(instances[0].selected).toBe(false);
   });
+
+  it('logs out a specific instance via --instance flag', async () => {
+    writeInstancesFile([
+      makeInstance({ name: 'prod', baseUrl: 'https://prod.example.com', selected: true }),
+      makeInstance({ name: 'staging', baseUrl: 'https://staging.example.com', selected: false }),
+    ]);
+
+    const program = createProgram(createLogoutCommand());
+    await program.parseAsync(['node', 'test', '--instance', 'staging', 'auth', 'logout']);
+
+    const output = JSON.parse(stdoutWrite.mock.calls[0][0] as string);
+    expect(output.data.loggedOut).toBe('staging');
+
+    const instances = readInstancesFile();
+    expect(instances).toHaveLength(1);
+    expect(instances[0].name).toBe('prod');
+    expect(instances[0].selected).toBe(true);
+  });
+
+  it('errors when --instance references nonexistent instance', async () => {
+    writeInstancesFile([
+      makeInstance({ name: 'prod', baseUrl: 'https://prod.example.com', selected: true }),
+    ]);
+
+    const program = createProgram(createLogoutCommand());
+    await expect(
+      program.parseAsync(['node', 'test', '--instance', 'nonexistent', 'auth', 'logout']),
+    ).rejects.toThrow('process.exit called');
+
+    const output = JSON.parse(stderrWrite.mock.calls[0][0] as string);
+    expect(output.error.code).toBe('INSTANCE_NOT_FOUND');
+  });
+
+  it('errors when no instance is selected and no --instance flag', async () => {
+    writeInstancesFile([
+      makeInstance({ name: 'prod', baseUrl: 'https://prod.example.com', selected: false }),
+      makeInstance({ name: 'staging', baseUrl: 'https://staging.example.com', selected: false }),
+    ]);
+
+    const program = createProgram(createLogoutCommand());
+    await expect(
+      program.parseAsync(['node', 'test', 'auth', 'logout']),
+    ).rejects.toThrow('process.exit called');
+
+    const output = JSON.parse(stderrWrite.mock.calls[0][0] as string);
+    expect(output.error.code).toBe('NO_SELECTED_INSTANCE');
+  });
 });

@@ -7,18 +7,19 @@ export function openBrowser(url: string): boolean {
     if (process.platform === 'darwin') {
       child = spawn('open', [url], spawnOpts);
     } else if (process.platform === 'win32') {
-      child = spawn(
-        'powershell',
-        ['-Command', `Start-Process '${url.replace(/'/g, "''")}'`],
-        spawnOpts,
-      );
+      child = spawn('cmd', ['/c', 'start', '', url], spawnOpts);
     } else {
       child = spawn('xdg-open', [url], spawnOpts);
     }
     child.unref();
-    child.on('error', () => {});
+    child.on('error', (err) => {
+      process.stderr.write(`Warning: failed to open browser: ${err.message}\n`);
+    });
     return true;
-  } catch {
+  } catch (err) {
+    process.stderr.write(
+      `Warning: failed to launch browser: ${err instanceof Error ? err.message : String(err)}\n`,
+    );
     return false;
   }
 }

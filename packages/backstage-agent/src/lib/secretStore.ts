@@ -37,7 +37,8 @@ class FileSecretStore implements SecretStore {
   }
   async set(service: string, account: string, secret: string): Promise<void> {
     const file = this.filePath(service, account);
-    await fs.mkdir(path.dirname(file), { recursive: true });
+    await fs.mkdir(path.dirname(file), { recursive: true, mode: 0o700 });
+    await fs.chmod(this.baseDir, 0o700);
     await fs.writeFile(file, secret, { encoding: 'utf8', mode: 0o600 });
   }
   async delete(service: string, account: string): Promise<void> {
