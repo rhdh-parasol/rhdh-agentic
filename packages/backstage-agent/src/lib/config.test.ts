@@ -55,6 +55,20 @@ describe('Config Management', () => {
     expect(() => readConfig()).toThrow('Invalid trust policy "bogus"');
   });
 
+  it('throws when config file has non-object content', () => {
+    const dir = join(tempHome, '.config', 'backstage-agent');
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, 'config.yaml'), '"just a string"\n', 'utf-8');
+    expect(() => readConfig()).toThrow('invalid structure');
+  });
+
+  it('throws when config file has array content', () => {
+    const dir = join(tempHome, '.config', 'backstage-agent');
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, 'config.yaml'), '- item1\n- item2\n', 'utf-8');
+    expect(() => readConfig()).toThrow('invalid structure');
+  });
+
   it('falls back to default when trustPolicy field is absent', () => {
     const dir = join(tempHome, '.config', 'backstage-agent');
     mkdirSync(dir, { recursive: true });

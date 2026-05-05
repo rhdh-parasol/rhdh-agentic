@@ -35,6 +35,9 @@ export function readConfig(): Config {
   }
 
   const parsed = YAML.parse(content) as Partial<Config> | null;
+  if (parsed !== null && parsed !== undefined && (typeof parsed !== 'object' || Array.isArray(parsed))) {
+    throw new Error('config.yaml has invalid structure (expected YAML mapping)');
+  }
   if (parsed?.trustPolicy !== undefined && !isValidTrustPolicy(parsed.trustPolicy)) {
     throw new Error(
       `Invalid trust policy "${parsed.trustPolicy}" in config.yaml. Valid values: ${TRUST_POLICY_VALUES.join(', ')}`,

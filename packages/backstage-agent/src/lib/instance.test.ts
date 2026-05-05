@@ -159,7 +159,7 @@ describe('Instance Resolution', () => {
     expect(instances.find(i => i.name === 'staging')?.selected).toBe(true);
   });
 
-  it('filters out invalid entries from instances file', () => {
+  it('throws on malformed entries in instances file', () => {
     const dir = join(tempHome, '.config', 'backstage-cli');
     mkdirSync(dir, { recursive: true });
     writeFileSync(
@@ -175,12 +175,10 @@ describe('Instance Resolution', () => {
       'utf-8',
     );
 
-    const instances = readInstances();
-    expect(instances).toHaveLength(1);
-    expect(instances[0].name).toBe('valid');
+    expect(() => readInstances()).toThrow('malformed entries');
   });
 
-  it('returns empty array when instances field is not an array', () => {
+  it('throws when instances field is not an array', () => {
     const dir = join(tempHome, '.config', 'backstage-cli');
     mkdirSync(dir, { recursive: true });
     writeFileSync(
@@ -189,7 +187,23 @@ describe('Instance Resolution', () => {
       'utf-8',
     );
 
+    expect(() => readInstances()).toThrow('expected "instances" to be an array');
+  });
+
+  it('returns empty array for empty file', () => {
+    const dir = join(tempHome, '.config', 'backstage-cli');
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, 'auth-instances.yaml'), '', 'utf-8');
+
     expect(readInstances()).toEqual([]);
+  });
+
+  it('throws when file has non-object YAML structure', () => {
+    const dir = join(tempHome, '.config', 'backstage-cli');
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, 'auth-instances.yaml'), '"just a string"\n', 'utf-8');
+
+    expect(() => readInstances()).toThrow('invalid structure');
   });
 
   it('removeInstance removes an existing instance', () => {

@@ -36,33 +36,40 @@ export function readInstances(): StoredInstance[] {
 
   if (!content.trim()) return [];
   const parsed = YAML.parse(content) as Record<string, unknown> | null;
-  if (!parsed || !Array.isArray(parsed.instances)) {
-    return [];
+  if (parsed === null || parsed === undefined) return [];
+  if (typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error('auth-instances.yaml has invalid structure (expected YAML mapping with "instances" key)');
   }
-  return parsed.instances.filter(
-    (entry: unknown, index: number): entry is StoredInstance => {
-      if (typeof entry !== 'object' || entry === null) {
-        process.stderr.write(
-          `Warning: skipping malformed instance entry at index ${index} in auth-instances.yaml (not an object)\n`,
-        );
-        return false;
-      }
-      const obj = entry as Record<string, unknown>;
-      const missing: string[] = [];
-      if (typeof obj.name !== 'string' || obj.name === '') missing.push('name');
-      if (typeof obj.baseUrl !== 'string') missing.push('baseUrl');
-      if (typeof obj.clientId !== 'string') missing.push('clientId');
-      if (typeof obj.issuedAt !== 'number') missing.push('issuedAt');
-      if (typeof obj.accessTokenExpiresAt !== 'number') missing.push('accessTokenExpiresAt');
-      if (missing.length > 0) {
-        process.stderr.write(
-          `Warning: skipping malformed instance entry at index ${index} in auth-instances.yaml (invalid fields: ${missing.join(', ')})\n`,
-        );
-        return false;
-      }
-      return true;
-    },
-  );
+  if (!Array.isArray(parsed.instances)) {
+    throw new Error('auth-instances.yaml has invalid structure (expected "instances" to be an array)');
+  }
+  const malformed: string[] = [];
+  const valid: StoredInstance[] = [];
+  for (let index = 0; index < parsed.instances.length; index++) {
+    const entry = parsed.instances[index] as unknown;
+    if (typeof entry !== 'object' || entry === null) {
+      malformed.push(`index ${index}: not an object`);
+      continue;
+    }
+    const obj = entry as Record<string, unknown>;
+    const missing: string[] = [];
+    if (typeof obj.name !== 'string' || obj.name === '') missing.push('name');
+    if (typeof obj.baseUrl !== 'string') missing.push('baseUrl');
+    if (typeof obj.clientId !== 'string') missing.push('clientId');
+    if (typeof obj.issuedAt !== 'number') missing.push('issuedAt');
+    if (typeof obj.accessTokenExpiresAt !== 'number') missing.push('accessTokenExpiresAt');
+    if (missing.length > 0) {
+      malformed.push(`index ${index}: invalid fields: ${missing.join(', ')}`);
+      continue;
+    }
+    valid.push(entry as StoredInstance);
+  }
+  if (malformed.length > 0) {
+    throw new Error(
+      `auth-instances.yaml contains malformed entries:\n${malformed.map(m => `  - ${m}`).join('\n')}`,
+    );
+  }
+  return valid;
 }
 
 export function writeInstances(instances: StoredInstance[]): void {
