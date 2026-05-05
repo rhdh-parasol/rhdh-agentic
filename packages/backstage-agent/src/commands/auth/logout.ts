@@ -17,7 +17,7 @@ export function createLogoutCommand(): Command {
       if (instanceFlag) {
         const target = instances.find(i => i.name === instanceFlag);
         if (!target) {
-          formatError(
+          return formatError(
             'INSTANCE_NOT_FOUND',
             `No stored instance named "${instanceFlag}"`,
             'Check available instances',
@@ -29,7 +29,7 @@ export function createLogoutCommand(): Command {
       } else {
         const selected = instances.find(i => i.selected);
         if (!selected) {
-          formatError(
+          return formatError(
             'NO_SELECTED_INSTANCE',
             'No instance is currently selected',
             'Specify an instance with --instance <name>',
@@ -40,10 +40,20 @@ export function createLogoutCommand(): Command {
         targetName = selected.name;
       }
 
-      const secretStore = getSecretStore();
-      const service = getAuthInstanceService(targetName);
-      await secretStore.delete(service, 'accessToken');
-      await secretStore.delete(service, 'refreshToken');
+      try {
+        const secretStore = getSecretStore();
+        const service = getAuthInstanceService(targetName);
+        await secretStore.delete(service, 'accessToken');
+        await secretStore.delete(service, 'refreshToken');
+      } catch (err) {
+        return formatError(
+          'STORAGE_ERROR',
+          `Failed to delete credentials: ${err instanceof Error ? err.message : String(err)}`,
+          'Check filesystem permissions on the credentials directory',
+          [],
+          output,
+        );
+      }
 
       const remaining = instances.filter(i => i.name !== targetName);
 
@@ -54,7 +64,17 @@ export function createLogoutCommand(): Command {
         }
       }
 
-      writeInstances(remaining);
+      try {
+        writeInstances(remaining);
+      } catch (err) {
+        return formatError(
+          'STORAGE_ERROR',
+          `Failed to update instance data: ${err instanceof Error ? err.message : String(err)}`,
+          'Check filesystem permissions on the config directory',
+          [],
+          output,
+        );
+      }
 
       const hints: string[] = [];
       if (remaining.length === 0) {

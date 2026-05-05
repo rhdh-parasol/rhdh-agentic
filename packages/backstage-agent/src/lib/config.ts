@@ -29,17 +29,22 @@ function getConfigPath(): string {
 }
 
 export function readConfig(): Config {
+  let content: string;
   try {
-    const content = readFileSync(getConfigPath(), 'utf-8');
-    const parsed = YAML.parse(content) as Partial<Config> | null;
-    return {
-      trustPolicy: isValidTrustPolicy(parsed?.trustPolicy)
-        ? parsed.trustPolicy
-        : DEFAULT_CONFIG.trustPolicy,
-    };
-  } catch {
-    return { ...DEFAULT_CONFIG };
+    content = readFileSync(getConfigPath(), 'utf-8');
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+      return { ...DEFAULT_CONFIG };
+    }
+    throw err;
   }
+
+  const parsed = YAML.parse(content) as Partial<Config> | null;
+  return {
+    trustPolicy: isValidTrustPolicy(parsed?.trustPolicy)
+      ? parsed.trustPolicy
+      : DEFAULT_CONFIG.trustPolicy,
+  };
 }
 
 export function writeConfig(config: Config): void {

@@ -27,7 +27,7 @@ export function createLoginCommand(): Command {
       const trustPolicyOpt: string | undefined = opts.trustPolicy;
 
       if (trustPolicyOpt && !isValidTrustPolicy(trustPolicyOpt)) {
-        formatError(
+        return formatError(
           'USAGE_ERROR',
           `Invalid trust policy level: "${trustPolicyOpt}"`,
           `Valid levels are: ${TRUST_POLICY_VALUES.join(', ')}`,
@@ -49,7 +49,7 @@ export function createLoginCommand(): Command {
           throw new Error(`HTTP ${resp.status}`);
         }
       } catch (err) {
-        formatError(
+        return formatError(
           'CONNECTION_ERROR',
           `Failed to connect to ${backendUrl}: ${err instanceof Error ? err.message : String(err)}`,
           'Check the backend URL and ensure the Backstage instance is running',
@@ -66,7 +66,18 @@ export function createLoginCommand(): Command {
       let redirectUri: string;
 
       if (useBrowser) {
-        const callback = await startCallbackServer({ state });
+        let callback: Awaited<ReturnType<typeof startCallbackServer>>;
+        try {
+          callback = await startCallbackServer({ state });
+        } catch (err) {
+          return formatError(
+            'SERVER_ERROR',
+            `Failed to start local OAuth callback server: ${err instanceof Error ? err.message : String(err)}`,
+            'Ensure port 8055 is available and try again',
+            [],
+            output,
+          );
+        }
         try {
           redirectUri = callback.url;
           const authUrl = buildAuthorizeUrl({
@@ -109,7 +120,18 @@ export function createLoginCommand(): Command {
           });
         });
 
-        const parsed = new URL(callbackUrl);
+        let parsed: URL;
+        try {
+          parsed = new URL(callbackUrl);
+        } catch {
+          return formatError(
+            'USAGE_ERROR',
+            'The pasted callback URL is not a valid URL',
+            'Copy the full URL from your browser address bar after authenticating',
+            [],
+            output,
+          );
+        }
         const returnedCode = parsed.searchParams.get('code');
         const returnedState = parsed.searchParams.get('state');
 
@@ -141,7 +163,7 @@ export function createLoginCommand(): Command {
         }
         token = (await tokenResp.json()) as typeof token;
       } catch (err) {
-        formatError(
+        return formatError(
           'AUTH_ERROR',
           `Token exchange failed: ${err instanceof Error ? err.message : String(err)}`,
           'Try logging in again',
@@ -150,29 +172,49 @@ export function createLoginCommand(): Command {
         );
       }
 
-      const secretStore = getSecretStore();
-      const service = getAuthInstanceService(instanceName);
-      await secretStore.set(service, 'accessToken', token.access_token);
-      if (token.refresh_token) {
-        await secretStore.set(service, 'refreshToken', token.refresh_token);
+      try {
+        const secretStore = getSecretStore();
+        const service = getAuthInstanceService(instanceName);
+        await secretStore.set(service, 'accessToken', token.access_token);
+        if (token.refresh_token) {
+          await secretStore.set(service, 'refreshToken', token.refresh_token);
+        }
+      } catch (err) {
+        return formatError(
+          'STORAGE_ERROR',
+          `Failed to store credentials: ${err instanceof Error ? err.message : String(err)}`,
+          'Check filesystem permissions on the credentials directory',
+          [],
+          output,
+        );
       }
 
-      const existing = getInstanceByName(instanceName);
+      try {
+        const existing = getInstanceByName(instanceName);
 
-      upsertInstance({
-        name: instanceName,
-        baseUrl: backendUrl,
-        clientId,
-        issuedAt: Date.now(),
-        accessTokenExpiresAt: Date.now() + token.expires_in * 1000,
-        selected: true,
-        metadata: existing?.metadata,
-      });
+        upsertInstance({
+          name: instanceName,
+          baseUrl: backendUrl,
+          clientId,
+          issuedAt: Date.now(),
+          accessTokenExpiresAt: Date.now() + token.expires_in * 1000,
+          selected: true,
+          metadata: existing?.metadata,
+        });
 
-      if (trustPolicyOpt) {
-        const config = readConfig();
-        config.trustPolicy = trustPolicyOpt as TrustPolicy;
-        writeConfig(config);
+        if (trustPolicyOpt) {
+          const config = readConfig();
+          config.trustPolicy = trustPolicyOpt as TrustPolicy;
+          writeConfig(config);
+        }
+      } catch (err) {
+        return formatError(
+          'STORAGE_ERROR',
+          `Failed to save instance data: ${err instanceof Error ? err.message : String(err)}`,
+          'Check filesystem permissions on the config directory',
+          [],
+          output,
+        );
       }
 
       formatSuccess(

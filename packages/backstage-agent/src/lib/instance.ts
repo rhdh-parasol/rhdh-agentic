@@ -29,14 +29,19 @@ function getInstancesPath(): string {
 }
 
 export function readInstances(): StoredInstance[] {
+  let content: string;
   try {
-    const content = readFileSync(getInstancesPath(), 'utf-8');
-    if (!content.trim()) return [];
-    const parsed = YAML.parse(content) as { instances?: StoredInstance[] } | null;
-    return parsed?.instances ?? [];
-  } catch {
-    return [];
+    content = readFileSync(getInstancesPath(), 'utf-8');
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+      return [];
+    }
+    throw err;
   }
+
+  if (!content.trim()) return [];
+  const parsed = YAML.parse(content) as { instances?: StoredInstance[] } | null;
+  return parsed?.instances ?? [];
 }
 
 export function writeInstances(instances: StoredInstance[]): void {
@@ -94,14 +99,14 @@ export function getInstanceByName(name: string): StoredInstance | undefined {
 export function resolveInstanceOrExit(
   flagValue: string | undefined,
   format: OutputFormat,
-): string | undefined {
+): string {
   const instances = readInstances();
 
   if (flagValue) {
     const found = instances.find(i => i.name === flagValue);
     if (!found) {
       const available = instances.map(i => i.name);
-      formatError(
+      return formatError(
         'INSTANCE_NOT_FOUND',
         `No stored instance named "${flagValue}"`,
         available.length > 0
@@ -115,7 +120,7 @@ export function resolveInstanceOrExit(
   }
 
   if (instances.length === 0) {
-    formatError(
+    return formatError(
       'NO_AUTH_INSTANCE',
       'No authenticated Backstage instance configured',
       'Run backstage-agent auth login to authenticate',
@@ -126,7 +131,7 @@ export function resolveInstanceOrExit(
 
   const selected = instances.find(i => i.selected);
   if (!selected) {
-    formatError(
+    return formatError(
       'NO_SELECTED_INSTANCE',
       'No instance is currently selected',
       'Run backstage-agent auth select <name> to select an instance',

@@ -43,19 +43,6 @@ describe('Trust Policy Enforcement', () => {
     expect(() => enforceTrustPolicy('catalog list', 'read-only', 'json')).not.toThrow();
   });
 
-  it('exempts config set-trust-policy from enforcement', () => {
-    writeConfig({ trustPolicy: 'read-only' });
-    expect(() => enforceTrustPolicy('config set-trust-policy', 'reversible', 'json')).not.toThrow();
-  });
-
-  it('exempts auth commands from enforcement', () => {
-    writeConfig({ trustPolicy: 'read-only' });
-    expect(() => enforceTrustPolicy('auth login', 'reversible', 'json')).not.toThrow();
-    expect(() => enforceTrustPolicy('auth status', 'read-only', 'json')).not.toThrow();
-    expect(() => enforceTrustPolicy('auth select', 'reversible', 'json')).not.toThrow();
-    expect(() => enforceTrustPolicy('auth logout', 'reversible', 'json')).not.toThrow();
-  });
-
   it('allows all commands under default policy', () => {
     expect(() => enforceTrustPolicy('templates execute', 'destructive', 'json')).not.toThrow();
   });

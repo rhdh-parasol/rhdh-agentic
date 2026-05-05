@@ -12,11 +12,11 @@ export function createWhoamiCommand(): Command {
       const { output, instance: instanceFlag } = getGlobalOptions(cmd);
       const instanceName = resolveInstanceOrExit(instanceFlag, output);
 
-      let ctx;
+      let ctx: Awaited<ReturnType<typeof getAuthenticatedContext>>;
       try {
         ctx = await getAuthenticatedContext(instanceName);
       } catch (err) {
-        formatError(
+        return formatError(
           'AUTH_ERROR',
           `Not authenticated: ${err instanceof Error ? err.message : String(err)}`,
           'Run backstage-agent auth login to authenticate',
@@ -46,7 +46,7 @@ export function createWhoamiCommand(): Command {
           output,
         );
       } catch (err) {
-        formatError(
+        return formatError(
           'AUTH_ERROR',
           `Failed to fetch user identity: ${err instanceof Error ? err.message : String(err)}`,
           'Your token may be expired. Try logging in again',

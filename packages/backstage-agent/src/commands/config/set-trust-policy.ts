@@ -11,7 +11,7 @@ export function createSetTrustPolicyCommand(): Command {
       const { output } = getGlobalOptions(cmd);
 
       if (!isValidTrustPolicy(level)) {
-        formatError(
+        return formatError(
           'USAGE_ERROR',
           `Invalid trust policy level: "${level}"`,
           `Valid levels are: ${TRUST_POLICY_VALUES.join(', ')}`,
@@ -21,9 +21,19 @@ export function createSetTrustPolicyCommand(): Command {
         );
       }
 
-      const config = readConfig();
-      config.trustPolicy = level as TrustPolicy;
-      writeConfig(config);
+      try {
+        const config = readConfig();
+        config.trustPolicy = level as TrustPolicy;
+        writeConfig(config);
+      } catch (err) {
+        return formatError(
+          'STORAGE_ERROR',
+          `Failed to save config: ${err instanceof Error ? err.message : String(err)}`,
+          'Check filesystem permissions on the config directory',
+          [],
+          output,
+        );
+      }
 
       formatSuccess(
         { trustPolicy: level },

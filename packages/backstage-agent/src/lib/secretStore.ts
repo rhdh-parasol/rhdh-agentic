@@ -8,15 +8,6 @@ export interface SecretStore {
   delete(service: string, account: string): Promise<void>;
 }
 
-async function pathExists(p: string): Promise<boolean> {
-  try {
-    await fs.stat(p);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 class FileSecretStore implements SecretStore {
   private readonly baseDir: string;
   constructor() {
@@ -35,11 +26,14 @@ class FileSecretStore implements SecretStore {
     );
   }
   async get(service: string, account: string): Promise<string | undefined> {
-    const file = this.filePath(service, account);
-    if (!(await pathExists(file))) {
-      return undefined;
+    try {
+      return await fs.readFile(this.filePath(service, account), 'utf8');
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+        return undefined;
+      }
+      throw err;
     }
-    return await fs.readFile(file, 'utf8');
   }
   async set(service: string, account: string, secret: string): Promise<void> {
     const file = this.filePath(service, account);
