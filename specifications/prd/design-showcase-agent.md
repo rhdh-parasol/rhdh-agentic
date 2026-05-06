@@ -51,8 +51,8 @@ The agent follows a five-step catalog-aware scaffolding workflow:
 1. **Discover** — Query the catalog for the target domain and existing services. Understand what components, APIs, and systems already exist, who owns them, and how they connect.
 2. **Learn** — Read TechDocs to find approved technology stacks, ADRs, and governance rules for the target domain. Understand why decisions were made and what constraints apply.
 3. **Reuse** — Identify components that already exist and can be consumed rather than rebuilt. The agent proposes which existing services, APIs, and resources the new service should integrate with. The architect reviews and approves before proceeding.
-4. **Scaffold** — The agent presents matching templates from the catalog for the architect to select, then executes the chosen software template that matches the domain's constraints (e.g., Quarkus + PostgreSQL + Kafka for a domain that mandates that stack). The new service is scaffolded according to organizational standards.
-5. **Verify** — If the executed template includes `publish:github` and `register:catalog` steps and the RHDH instance is properly configured, confirm the new service appears in the catalog with correct ownership, dependencies, and metadata.
+4. **Scaffold** — The agent presents matching templates from the catalog for the architect to select, then executes the chosen software template that matches the domain's constraints (e.g., a domain that mandates Quarkus + PostgreSQL + Kafka). The new service is scaffolded according to organizational standards.
+5. **Verify** — Confirm the scaffolded service is registered in the catalog and discoverable — with correct ownership, dependencies, and metadata. How the service gets registered (e.g., SCM integration, local filesystem, manual registration) is an implementation detail that depends on the RHDH instance's configuration.
 
 **Stretch goal:** If no existing template fits the architect's design need, the agent can — with the architect's explicit approval — create a new software template, register it in the catalog, and use it to scaffold the service.
 
