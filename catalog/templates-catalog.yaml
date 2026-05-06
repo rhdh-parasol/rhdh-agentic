@@ -1,0 +1,13 @@
+# Software Templates catalog — Parasol Insurance governed scaffolding
+
+apiVersion: backstage.io/v1alpha1
+kind: Location
+metadata:
+  name: parasol-templates
+  title: Parasol Insurance Software Templates
+  description: Governed scaffolding templates for Parasol's approved stack combinations
+spec:
+  targets:
+    - ./templates/parasol-quarkus-service/template.yaml
+    - ./templates/parasol-python-service/template.yaml
+    - ./templates/parasol-nodejs-service/template.yaml

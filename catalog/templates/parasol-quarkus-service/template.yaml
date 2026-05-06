@@ -1,0 +1,112 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: parasol-quarkus-service
+  title: Parasol Quarkus Service
+  description: |
+    Scaffold a new Quarkus microservice for Parasol Insurance domains.
+    Use for Claims, Underwriting, Policy Administration, Billing, and other
+    Java-dominant domains. Produces a Maven project with REST endpoint,
+    health checks, metrics, and a valid catalog-info.yaml.
+  tags:
+    - java
+    - quarkus
+    - rest
+    - parasol
+    - recommended
+spec:
+  owner: group:default/parasol-platform-engineering
+  type: service
+
+  parameters:
+    - title: Service Information
+      required:
+        - name
+        - description
+        - owner
+        - system
+      properties:
+        name:
+          title: Service Name
+          type: string
+          description: Unique service name in kebab-case (e.g., claim-adjuster-service)
+          pattern: "^[a-z][a-z0-9-]*$"
+          ui:autofocus: true
+        description:
+          title: Description
+          type: string
+          description: What does this service do?
+        owner:
+          title: Owner
+          type: string
+          description: The team that owns this service
+          ui:field: EntityPicker
+          ui:options:
+            catalogFilter:
+              kind: [Group]
+        system:
+          title: System
+          type: string
+          description: The Parasol system this service belongs to
+          ui:field: EntityPicker
+          ui:options:
+            catalogFilter:
+              kind: [System]
+
+    - title: Java Configuration
+      required:
+        - groupId
+        - artifactId
+        - javaPackageName
+      properties:
+        groupId:
+          title: Group ID
+          type: string
+          default: com.parasol
+          description: Maven group ID
+        artifactId:
+          title: Artifact ID
+          type: string
+          description: Maven artifact ID (defaults to service name)
+        javaPackageName:
+          title: Java Package
+          type: string
+          default: com.parasol
+          description: Base Java package name
+        port:
+          title: Port
+          type: number
+          default: 8080
+          description: HTTP port for the service
+
+  steps:
+    - id: template
+      name: Fetch Service Skeleton
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{ parameters.name }}
+          description: ${{ parameters.description }}
+          groupId: ${{ parameters.groupId }}
+          artifactId: ${{ parameters.artifactId }}
+          javaPackageName: ${{ parameters.javaPackageName }}
+          port: ${{ parameters.port }}
+
+    - id: catalogTemplate
+      name: Fetch Catalog Info
+      action: fetch:template
+      input:
+        url: ../skeletons/catalog-info/
+        values:
+          name: ${{ parameters.name }}
+          description: ${{ parameters.description }}
+          owner: ${{ parameters.owner }}
+          system: ${{ parameters.system }}
+          stack: java
+
+  output:
+    links:
+      - title: Service Skeleton
+        icon: catalog
+        entityRef: ${{ steps.catalogTemplate.output.entityRef }}

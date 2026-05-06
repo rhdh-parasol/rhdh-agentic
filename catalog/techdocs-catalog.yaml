@@ -1,0 +1,13 @@
+# TechDocs catalog — placeholder
+# TechDocs content is discovered via backstage.io/techdocs-ref annotations
+# on entities in the annotated foundations overlay, not via separate catalog entries.
+# This file exists as a target in the catalog index for future TechDocs-only entities.
+
+apiVersion: backstage.io/v1alpha1
+kind: Location
+metadata:
+  name: parasol-techdocs
+  title: Parasol Insurance TechDocs
+  description: TechDocs content for Parasol Insurance catalog entities
+spec:
+  targets: []

@@ -1,0 +1,38 @@
+# Parasol Insurance Catalog Index (with TechDocs annotations)
+#
+# Replaces the upstream parasol-catalog-index.yaml to load our annotated
+# foundations file (with backstage.io/techdocs-ref) alongside the upstream
+# component and API entity files.
+#
+# Source: benwilcock/backstage-catalogs @ dbc1ba9e7589b391cb2c292b964f4a729efb0489
+
+apiVersion: backstage.io/v1alpha1
+kind: Location
+metadata:
+  name: parasol-catalog-index
+  title: Parasol Insurance Internal Catalog
+  description: |
+    Parasol Insurance software catalog with TechDocs annotations.
+    Groups, Domains, and Systems loaded from local annotated overlay.
+    Components and APIs loaded from upstream benwilcock/backstage-catalogs.
+spec:
+  targets:
+    # Annotated foundations (Groups, Domains, Systems) — local overlay
+    - ./overlays/parasol-foundations-annotated.yaml
+
+    # Components — loaded from upstream via URL (pinned to commit SHA)
+    - https://github.com/benwilcock/backstage-catalogs/blob/dbc1ba9e7589b391cb2c292b964f4a729efb0489/parasol/parasol-catalog-claims.override.yaml
+    - https://github.com/benwilcock/backstage-catalogs/blob/dbc1ba9e7589b391cb2c292b964f4a729efb0489/parasol/parasol-catalog-underwriting.override.yaml
+    - https://github.com/benwilcock/backstage-catalogs/blob/dbc1ba9e7589b391cb2c292b964f4a729efb0489/parasol/parasol-catalog-policy.override.yaml
+    - https://github.com/benwilcock/backstage-catalogs/blob/dbc1ba9e7589b391cb2c292b964f4a729efb0489/parasol/parasol-catalog-personal-lines.override.yaml
+    - https://github.com/benwilcock/backstage-catalogs/blob/dbc1ba9e7589b391cb2c292b964f4a729efb0489/parasol/parasol-catalog-commercial-specialty.override.yaml
+    - https://github.com/benwilcock/backstage-catalogs/blob/dbc1ba9e7589b391cb2c292b964f4a729efb0489/parasol/parasol-catalog-life.override.yaml
+    - https://github.com/benwilcock/backstage-catalogs/blob/dbc1ba9e7589b391cb2c292b964f4a729efb0489/parasol/parasol-catalog-digital.override.yaml
+    - https://github.com/benwilcock/backstage-catalogs/blob/dbc1ba9e7589b391cb2c292b964f4a729efb0489/parasol/parasol-catalog-data-platform.override.yaml
+
+    # APIs — loaded from upstream via URL
+    - https://github.com/benwilcock/backstage-catalogs/blob/dbc1ba9e7589b391cb2c292b964f4a729efb0489/parasol/parasol-catalog-apis.override.yaml
+
+    # TechDocs and Software Templates — local content
+    - ./techdocs-catalog.yaml
+    - ./templates-catalog.yaml

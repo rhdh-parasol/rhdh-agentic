@@ -1,0 +1,11 @@
+site_name: "Parasol Rating Engine System"
+site_description: "Architecture decisions and technical documentation for the Rating Engine System"
+
+plugins:
+  - techdocs-core
+
+nav:
+  - Home: index.md
+  - Architecture Decision Records:
+      - Overview: adrs/index.md
+      - "ADR-001: Centralized Rating Engine": adrs/001-centralized-rating.md

@@ -39,6 +39,12 @@ artifacts:
 
 
       This is the foundation - specs, design, and tasks all build on this.
+
+      REQUIRED (repo rule): Include a `Canonical Touchpoints` section naming every
+      affected PRD/ADR file under `specifications/` and every affected long-lived
+      feature/domain spec under `openspec/specs/`, or explicitly state `None`.
+      Also state the change type: product | architecture | feature-spec |
+      migration | workflow-only | docs-only.
     requires: []
   - id: specs
     generates: specs/**/*.md
@@ -182,6 +188,14 @@ artifacts:
 
 
       Good design docs explain the "why" behind technical decisions.
+
+      REQUIRED (repo rule): `design.md` remains part of the artifact
+      flow. If none of the above apply, keep the file brief and explicitly state
+      `No design changes` under Decisions.
+
+      REQUIRED (repo rule): Carry forward the `Canonical Touchpoints` from the
+      proposal. For each touched canonical document/spec, explain how it will
+      change, or state `No canonical document updates`.
     requires:
       - proposal
   - id: tasks
@@ -234,6 +248,19 @@ artifacts:
       Reference specs for what needs to be built, design for how to build it.
 
       Each task should be verifiable - you know when it's done.
+
+      REQUIRED (repo rules):
+      - Prepend the task list with a comment that after each completed task we
+        shall commit the changes.
+      - Add explicit tasks for direct updates to `specifications/prd/`,
+        `specifications/adr/`, and/or `openspec/specs/` whenever those
+        touchpoints are listed in the proposal.
+      - When a task changes behavior, include appropriate verification work
+        following tests and repository guidance.
+      - When the change adds or materially edits a long-lived capability spec
+        under `openspec/specs/<capability>/spec.md`, make the final task create
+        or update `openspec/specs/<capability>/demo.md` using the showboat
+        skill.
     requires:
       - specs
       - design
@@ -242,5 +269,60 @@ apply:
     - tasks
   tracks: tasks.md
   instruction: |
-    Read context files, work through pending tasks, mark complete as you go.
-    Pause if you hit blockers or need clarification.
+    Read context files and all pending tasks before editing.
+
+    Before implementation starts, choose one execution mode for this apply run:
+    - Direct mode: implement tasks in the lead context and self-check against
+      specs, design, tests, and relevant ADRs before marking tasks complete.
+    - Team mode: orchestrate implementer + verifier subagents for the run. The
+      verifier must be independent of implementer reasoning and re-run checks
+      before tasks are marked complete.
+
+    Choose team mode when the pending work has semantic complexity, ADR-bound
+    constraints, broad cross-layer changes, or high risk of single-context
+    drift. Choose direct mode for mechanical scaffolding, docs/config-only work,
+    and narrow low-risk changes.
+
+    Announce the chosen mode and rationale before making changes. Use that mode
+    for the run. If the selected mode becomes inappropriate, pause and explain
+    the mismatch instead of silently switching.
+
+    In team mode:
+    - Partition pending tasks into one or more bounded assignments. Prefer a
+      short contiguous task range when tasks build on each other.
+    - Pass the implementer the assigned scope, change artifacts, relevant
+      repository guidance, affected paths if known, and verifier feedback on fix
+      rounds.
+    - Pass the verifier the same scope, artifacts, and repository guidance plus
+      the implementer's changed-file list, verification summary, and checks run.
+      Do not pass implementer reasoning as proof.
+    - Mark tasks complete only after verifier `pass`; for `concerns`, decide
+      explicitly whether to accept or pause; for `fail`, run a bounded fix round
+      or pause.
+
+    Work through pending tasks, mark complete as you go, and pause if you hit
+    blockers or need clarification.
+
+    Journal: emit interaction events via `scripts/openspec-journal.py` at
+    these points:
+      - `mode.chosen` once at apply start (mode + 1-sentence rationale +
+        optional `agents=<int>` for the run).
+      - `task.start` / `task.complete` per task (or per assigned task range
+        in team mode).
+      - `verifier.result` per verifier verdict in team mode (pass/concerns/
+        fail; the verifier writes the line, not the implementer).
+      - `task.blocked` whenever you pause for clarification.
+      - `decision` for any load-bearing call not covered above.
+      - `skill.invoked` when a user-invoked skill (e.g., `/showboat`,
+        `/retro`) runs against this change.
+      - `agent.spawned` when a fan-out subagent group is launched
+        (e.g., `team:debate`); record `count=<int>` and `kind=<label>`.
+      - `handoff` as the last line before stopping a session, and the first
+        line on resume.
+    `context.compacted` is normally emitted by the PreCompact hook in
+    `scripts/openspec-journal-precompact-hook.sh`, not by skills directly.
+
+    `input`/`output` are rejected if longer than the helper's hard limit;
+    move long content to design.md or an ADR and reference it from the
+    journal entry. Run `scripts/openspec-journal.py` with no arguments for
+    the contract.

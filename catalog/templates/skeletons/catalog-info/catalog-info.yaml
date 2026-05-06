@@ -1,0 +1,21 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ${{ values.name }}
+  description: ${{ values.description }}
+  annotations:
+    backstage.io/techdocs-ref: dir:.
+  tags:
+    - ${{ values.stack }}
+{%- if values.domain %}
+    - ${{ values.domain }}
+{%- endif %}
+spec:
+  type: service
+  lifecycle: production
+  owner: ${{ values.owner }}
+  system: ${{ values.system }}
+{%- if values.dependsOn %}
+  dependsOn:
+    - ${{ values.dependsOn }}
+{%- endif %}

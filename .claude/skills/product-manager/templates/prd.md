@@ -45,7 +45,7 @@
 
 ## 9. Success Outcomes
 
-[High-level, product-level outcomes. Not Given-When-Then acceptance criteria — those belong in FSDs. These are the outcomes that tell you the product is working.]
+[High-level, product-level outcomes — not implementation-level acceptance criteria (those belong in OpenSpec specs). These are the outcomes that tell you the product is working.]
 
 ---
 

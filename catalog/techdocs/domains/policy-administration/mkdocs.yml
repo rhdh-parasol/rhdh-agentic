@@ -1,0 +1,8 @@
+site_name: "Parasol Policy Administration Domain Handbook"
+site_description: "Approved stack, governance rules, and architectural guidance for the Policy Administration domain"
+
+plugins:
+  - techdocs-core
+
+nav:
+  - Home: index.md

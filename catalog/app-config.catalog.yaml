@@ -1,0 +1,43 @@
+# Simulated Enterprise Catalog — app-config fragment
+#
+# Merge this into your Backstage app-config to load the enterprise and
+# Parasol Insurance catalogs from benwilcock/backstage-catalogs.
+#
+# Pinned to commit: dbc1ba9e7589b391cb2c292b964f4a729efb0489 (2026-03-18)
+# Bump the SHA explicitly when upstream updates are desired.
+
+# Required: suppress SCM warnings for Parasol's fictional GitHub Enterprise host.
+# Parasol entities reference https://github.parasol.com as their source location.
+integrations:
+  github:
+    - host: github.parasol.com
+      token: placeholder
+      apiBaseUrl: https://github.parasol.com/api/v3
+      rawBaseUrl: https://github.parasol.com/raw
+
+catalog:
+  rules:
+    - allow:
+        - Component
+        - API
+        - Location
+        - Template
+        - Domain
+        - User
+        - Group
+        - System
+        - Resource
+
+  locations:
+    # Enterprise OSS catalog (215 entities: 156 Components, 31 Systems, 11 Domains, 10 APIs, 7 Groups)
+    - type: url
+      target: https://github.com/benwilcock/backstage-catalogs/blob/dbc1ba9e7589b391cb2c292b964f4a729efb0489/enterprise-catalog-index.yaml
+      rules:
+        - allow: [Location, Component, API, Domain, Group, System]
+
+    # Parasol Insurance catalog (271 entities + TechDocs + Templates)
+    # Uses our custom index with TechDocs-annotated foundations overlay
+    - type: url
+      target: https://github.com/rhdh-parasol/rhdh-agentic/blob/main/catalog/parasol-catalog-index.yaml
+      rules:
+        - allow: [Location, Component, API, Domain, Group, System, Template]
