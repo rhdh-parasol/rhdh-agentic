@@ -147,6 +147,7 @@ The `auth whoami` command SHALL be classified as trust level `read-only` because
 - **THEN** the help output includes `Trust level: read-only`
 
 ### Requirement: Shared credential storage
+
 The CLI SHALL store and read credentials using the same paths and format as backstage-cli: `~/.config/backstage-cli/auth-instances.yaml` for instance metadata and `~/.local/share/backstage-cli/auth-secrets/` for tokens. Token storage uses a custom `FileSecretStore` instead of `CliAuth` from `@backstage/cli-node` to avoid a read/write mismatch when keytar is installed (CliAuth prefers keytar for reads while login writes to the file store).
 
 #### Scenario: Credentials shared with backstage-cli
