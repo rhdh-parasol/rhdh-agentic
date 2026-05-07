@@ -37,7 +37,7 @@ The CLI SHALL provide `backstage-agent auth login --backend-url <url>` that auth
 
 ### Requirement: No-browser login mode
 
-The CLI SHALL support `backstage-agent auth login --backend-url <url> --no-browser` for environments without a local browser. The command SHALL print the authorization URL to stdout and accept the callback URL pasted by the user.
+The CLI SHALL support `backstage-agent auth login --backend-url <url> --no-browser` for environments without a local browser. The command SHALL print the authorization URL to stderr (keeping stdout clean for the JSON result envelope) and accept the callback URL pasted by the user via stdin.
 
 #### Scenario: No-browser login flow
 
@@ -147,17 +147,19 @@ The `auth whoami` command SHALL be classified as trust level `read-only` because
 - **THEN** the help output includes `Trust level: read-only`
 
 ### Requirement: Shared credential storage
-
-The CLI SHALL store and read credentials using the same paths and format as backstage-cli: `~/.config/backstage-cli/auth-instances.yaml` for instance metadata and `~/.local/share/backstage-cli/auth-secrets/` for tokens. Token retrieval and refresh SHALL be delegated to `CliAuth` from `@backstage/cli-node`.
+The CLI SHALL store and read credentials using the same paths and format as backstage-cli: `~/.config/backstage-cli/auth-instances.yaml` for instance metadata and `~/.local/share/backstage-cli/auth-secrets/` for tokens. Token storage uses a custom `FileSecretStore` instead of `CliAuth` from `@backstage/cli-node` to avoid a read/write mismatch when keytar is installed (CliAuth prefers keytar for reads while login writes to the file store).
 
 #### Scenario: Credentials shared with backstage-cli
 
 - **WHEN** a user has authenticated via `backstage-cli auth login`
 - **THEN** `backstage-agent` commands authenticate using the same stored tokens without re-login
 
-#### Scenario: Automatic token refresh
+#### Scenario: Expired token requires re-login
 
-- **WHEN** a command executes with an expired access token and a valid refresh token
+- **WHEN** a command executes with an expired access token
+- **THEN** the backend returns an auth error
+- **AND** the CLI reports an `AUTH_ERROR` with a hint to run `auth login` again
+- **NOTE** Automatic token refresh using refresh tokens is deferred to a future change
 - **THEN** `CliAuth` automatically refreshes the token before making the API call
 
 ### Requirement: Auth status trust level

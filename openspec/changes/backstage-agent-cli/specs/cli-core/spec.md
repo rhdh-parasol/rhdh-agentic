@@ -137,10 +137,10 @@ The CLI SHALL enforce a configurable trust policy that gates command execution b
 - **WHEN** a user runs `backstage-agent auth login --backend-url https://example.com --trust-policy read-only`
 - **THEN** authentication completes and the trust policy is set to `read-only`
 
-#### Scenario: Default policy is all
+#### Scenario: Default policy is read-only
 
 - **WHEN** no trust policy has been configured
-- **THEN** all commands are allowed regardless of trust level
+- **THEN** only read-only commands are allowed (deny by default)
 
 #### Scenario: Invalid trust policy level
 
@@ -242,7 +242,7 @@ Commands with trust level `destructive` SHALL default to dry-run mode, returning
 
 ### Requirement: Non-interactive operation
 
-The CLI SHALL NOT prompt for stdin input during any command execution. All input MUST be provided via flags and arguments.
+The CLI SHALL NOT prompt for stdin input during normal command execution. All input MUST be provided via flags and arguments. The `auth login --no-browser` flow is the sole exception — it accepts a pasted callback URL via stdin as an alternative to the browser-based flow.
 
 #### Scenario: No stdin prompts
 

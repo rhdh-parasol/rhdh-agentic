@@ -159,11 +159,11 @@ Resolution order: `--instance <name>` flag → selected instance from storage �
 
 **Rationale:** Enterprise environments often have multiple Backstage instances (dev, staging, production). The multi-instance model is inherited from backstage-cli's existing storage format — `CliAuth` already supports instance selection via `instanceName` option. Agents targeting a specific instance can use `--instance` without re-authenticating.
 
-### D-6: Auth Integration — Delegated to CliAuth
+### D-6: Auth Integration — Own SecretStore (CliAuth replaced)
 
-Per the [authentication ADR](../../../specifications/adr/backstage-agent/authentication.md), all commands obtain tokens via `CliAuth.create()` → `auth.getAccessToken()`. The `auth login` command handles the one-time OAuth setup.
+The initial plan was to delegate token retrieval to `CliAuth` from `@backstage/cli-node` per the [authentication ADR](../../../specifications/adr/backstage-agent/authentication.md). However, `CliAuth` prefers keytar (macOS Keychain) for token retrieval, while the login command writes tokens via `FileSecretStore`. On machines with keytar installed, this mismatch causes `CliAuth` to return stale tokens from the keychain while fresh tokens sit in the file store, leading to 401s immediately after login.
 
-No custom token management code. The `lib/auth.ts` module provides a thin wrapper that creates the authenticated fetch function used by all service implementations.
+The implementation uses its own `secretStore.ts` and `instance.ts` modules so both read and write go through the same file-based code path. The `lib/auth.ts` module provides an authenticated fetch function used by all service implementations. Token refresh is not yet implemented — expired tokens require re-login (tracked as follow-up work).
 
 ### D-7: Help as Protocol Contract
 
@@ -183,9 +183,9 @@ The CLI enforces a configurable trust policy that gates command execution based 
 
 Policy values (each level includes all levels below it):
 
-- `read-only` — only read-only commands allowed
+- `read-only` — only read-only commands allowed (default — deny by default for safety)
 - `reversible` — read-only + reversible commands allowed
-- `all` — everything allowed (default)
+- `all` — everything allowed
 
 The trust policy is stored in `~/.config/backstage-agent/config.yaml` and managed through two entry points:
 
