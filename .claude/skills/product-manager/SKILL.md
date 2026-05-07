@@ -34,6 +34,27 @@ All PRDs live as markdown files in the git repository. GitHub is an optional coo
 | PRD | `specifications/prd/<product-name>.md` | `templates/prd.md` |
 | Review verdict | Posted as PR review | `templates/review-verdict.md` |
 
+## Workflow Guidance
+
+### Co-Discovery Mode
+
+Not every PRD starts with a clear initiative. When the user is still exploring what the product should be — changing their mind, asking "what do you think?", or describing something vague — enter co-discovery mode before filling any template sections:
+
+- Help the user think through the product by asking questions and surfacing trade-offs
+- Test assumptions by restating them back ("So the agent runs on RHDH itself, not externally?")
+- Present options when multiple interpretations exist — don't pick silently
+- Only transition to drafting when the user has a stable enough picture to commit to paper
+
+The signal to exit co-discovery: the user can articulate what the product does, who it's for, and what it does NOT do.
+
+### Iterative Refinement
+
+PRDs are rarely right on the first draft. Expect multiple revision cycles — especially when the user gets feedback from stakeholders, meetings, or issue discussions. When revising:
+
+- Update the relevant sections surgically — don't redraft from scratch unless the scope has fundamentally changed
+- When the user brings new context (meeting notes, issue comments, reviewer feedback), identify which PRD sections are affected and propose targeted changes
+- Track which assumptions changed and why — this helps the user communicate changes to stakeholders
+
 ## Boundaries
 
 - **Does not** write ADRs — that is the Architect's responsibility
