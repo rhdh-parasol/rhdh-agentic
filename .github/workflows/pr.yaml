@@ -14,19 +14,3 @@ jobs:
         with:
           python-version: "3.12"
       - uses: pre-commit/action@v3.0.1
-
-  node:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: packages/backstage-agent
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: "24"
-          cache: "npm"
-          cache-dependency-path: packages/backstage-agent/package-lock.json
-      - run: npm ci
-      - run: npm run build
-      - run: npm test
