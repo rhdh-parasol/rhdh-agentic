@@ -1,0 +1,6 @@
+# Default owners for everything in the repo
+*                       @durandom @kadel
+
+# Fullsend config — human-only, agents must not modify their own guardrails
+/.fullsend/             @durandom @kadel
+/.github/workflows/     @durandom @kadel
