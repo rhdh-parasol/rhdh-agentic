@@ -262,11 +262,9 @@ We chose "Add GitHub issue templates" as the end-to-end test scenario because it
 - Triggered manually via `/fs-code` comment. Dispatcher routed correctly to `code` stage.
 - **Sandbox creation timed out** (run `26514769886`): `sandbox "agent-code-3288-1779889260" not ready after 1m0s`. The gateway logged `Creating sandbox container` → then nothing for 60 seconds → timeout.
 - **Root cause: heavy image + old timeout.** The Coder uses `ghcr.io/fullsend-ai/fullsend-code:latest` (includes Go toolchain, gopls, lychee) which is much larger than the Triage image (`fullsend-sandbox:latest`). Pulling it exceeds the 60-second sandbox ready timeout.
-- **Fix exists but not in `@v0`.** Fullsend commit `1bf016d9` adds pre-pull, retry with exponential backoff, and increases the default timeout to 120 seconds. Our shim references `@v0`, which does not include this fix. Options:
-  - Wait for the next Fullsend release that includes the fix
-  - Pin our shim to a newer ref (e.g. `@main` or a specific SHA) — requires testing
-  - Set `FULLSEND_SANDBOX_READY_TIMEOUT=180` as a runner env variable workaround
-- [ ] Blocked on Fullsend releasing the sandbox retry fix in a tagged version.
+- **Fix exists but not released.** Fullsend commit `1bf016d9` adds pre-pull, retry with exponential backoff, and increases the default timeout to 120 seconds. However, the fix is in the **Go binary** (`fullsend run`), not in the reusable workflow YAML. The binary is downloaded separately from the latest GitHub Release tag — pinning the shim to a newer workflow SHA does not help (confirmed: pinning to `@1bf016d9` still downloaded the old binary, same 60s timeout).
+- **No workaround from our side.** The sandbox timeout is hardcoded in the released `fullsend` binary. We need the Fullsend team to cut a new release that includes commit `1bf016d9`.
+- [ ] Request new Fullsend release from the team (or ask for a pre-release binary).
 
 **Step 3 — Review:** blocked by Coder.
 
