@@ -281,7 +281,15 @@ We chose "Add GitHub issue templates" as the end-to-end test scenario because it
 - **Push blocked by protected-path check.** The post-script correctly refused to push because the agent modified `.github/ISSUE_TEMPLATE/bug_report.yml` — a protected path. This is expected: agents cannot modify files under `.github/` (same guardrail that CODEOWNERS enforces).
 - **Conclusion:** The Fix agent works end-to-end, but our test scenario (issue templates under `.github/`) is incompatible with the protected-path enforcement. A real Fix test needs an issue whose files live outside protected paths.
 
-**Step 5 — Retro:** waiting for merge. Can be tested by merging PR #61 manually.
+**Step 5 — Retro (PR [#61](https://github.com/rhdh-parasol/rhdh-agentic/pull/61))**
+
+- **Auto-trigger did not fire** on merge. The `closed` event and the `pull_request_review` event (from our approval) hit the same concurrency group simultaneously. The review-run got the lock; the retro-run was dropped.
+- **Manual trigger via `/fs-retro` worked.** Agent ran for ~9 minutes, produced valid `retro-result.json`.
+- **Post-script failed** with `Resource not accessible by integration` (403) — the `fullsend-ai-retro` GitHub App token lacks permission to post comments on this repo. The retro output was captured in the run artifact but never posted to the PR.
+- [x] **Retro content is excellent.** Two concrete improvement proposals filed:
+  1. **Warn early when `/fs-fix` targets protected paths** — pre-flight check before running the fix agent, to avoid wasting a 25-minute cycle on a guaranteed block.
+  2. **Triage should label well-scoped issues `ready-to-code` more readily** — when an issue specifies exact file paths and describes a well-known pattern, default to `ready-to-code`.
+- Both proposals target `fullsend-ai/fullsend` and include validation criteria.
 
 ### How to debug a Fullsend agent run
 
