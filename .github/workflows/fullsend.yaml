@@ -40,9 +40,7 @@ jobs:
     if: >-
       github.event_name != 'issue_comment'
       || github.event.comment.user.type != 'Bot'
-    # Pinned past v0 to include sandbox pre-pull + retry fix (1bf016d9).
-    # Revert to @v0 once the next fullsend release ships.
-    uses: fullsend-ai/fullsend/.github/workflows/reusable-dispatch.yml@1bf016d96c9ab9c2963956b6c6cedceea7133a59
+    uses: fullsend-ai/fullsend/.github/workflows/reusable-dispatch.yml@v0
     with:
       event_action: ${{ github.event.action }}
       install_mode: per-repo
