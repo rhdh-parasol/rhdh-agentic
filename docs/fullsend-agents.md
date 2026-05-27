@@ -257,13 +257,22 @@ We chose "Add GitHub issue templates" as the end-to-end test scenario because it
 - [x] **IAM fix applied** — granted `roles/aiplatform.user` to the WIF `principalSet` for `redhat-developer`. Re-triggered `/fs-triage`.
 - [x] **Triage succeeded** (run `26511100971`). Labels applied: `good first issue`, `feature`, `triaged`. Agent posted a structured triage comment with category (Feature), severity (Low), recommended implementation, and a proposed test case. Quality is good — it correctly identified the scope, suggested YAML frontmatter format, and even flagged it as suitable for first-time contributors. Did **not** apply `ready-to-code` — used `triaged` instead, so the Coder agent won't auto-trigger.
 
-**Step 2 — Coder:** Triage labeled `triaged` + `feature`, not `ready-to-code`. The Coder agent auto-triggers on `ready-to-code` only. Options: (a) manually add `ready-to-code` label to test auto-trigger, or (b) use `/fs-code` slash command.
+**Step 2 — Coder (Issue [#60](https://github.com/rhdh-parasol/rhdh-agentic/issues/60))**
 
-**Step 3 — Review:** waiting for Coder to produce a PR.
+- Triggered manually via `/fs-code` comment. Dispatcher routed correctly to `code` stage.
+- **Sandbox creation timed out** (run `26514769886`): `sandbox "agent-code-3288-1779889260" not ready after 1m0s`. The gateway logged `Creating sandbox container` → then nothing for 60 seconds → timeout.
+- **Root cause: heavy image + old timeout.** The Coder uses `ghcr.io/fullsend-ai/fullsend-code:latest` (includes Go toolchain, gopls, lychee) which is much larger than the Triage image (`fullsend-sandbox:latest`). Pulling it exceeds the 60-second sandbox ready timeout.
+- **Fix exists but not in `@v0`.** Fullsend commit `1bf016d9` adds pre-pull, retry with exponential backoff, and increases the default timeout to 120 seconds. Our shim references `@v0`, which does not include this fix. Options:
+  - Wait for the next Fullsend release that includes the fix
+  - Pin our shim to a newer ref (e.g. `@main` or a specific SHA) — requires testing
+  - Set `FULLSEND_SANDBOX_READY_TIMEOUT=180` as a runner env variable workaround
+- [ ] Blocked on Fullsend releasing the sandbox retry fix in a tagged version.
 
-**Step 4 — Fix:** waiting for Review.
+**Step 3 — Review:** blocked by Coder.
 
-**Step 5 — Retro:** waiting for merge.
+**Step 4 — Fix:** blocked by Review.
+
+**Step 5 — Retro:** blocked by merge.
 
 ### How to debug a Fullsend agent run
 
