@@ -241,15 +241,28 @@ We chose "Add GitHub issue templates" as the end-to-end test scenario because it
 - **Auto-trigger did not fire.** The shim workflow ran (run `26507172941`, `issues/opened`, `success`) but the upstream dispatcher (`reusable-dispatch.yml`) does not route `issues/opened` to the triage stage. The `issues)` case block only handles `labeled` actions (for `ready-to-code` and `ready-for-review` labels). `opened` and `edited` fall through to "No stage matched — skipping dispatch."
 - **Root cause:** The dispatcher's routing table does not implement auto-triage on issue creation. Triage is only reachable via the `/fs-triage` slash command (routed through the `issue_comment` handler). The pipeline docs describe auto-triage as the intended behavior, but the dispatch code does not implement it yet.
 - **Workaround:** Posted `/fs-triage` as a comment on issue #60 to trigger triage manually.
-- [ ] Awaiting triage result.
+- **Manual trigger worked** — dispatcher routed `/fs-triage` to the triage stage correctly (run `26508587149`). Sandbox infrastructure came up (Podman, OpenShell Gateway, security scans all passed).
+- **Agent crashed immediately** — exit code 1 after 0-1 seconds, both iterations. No `agent-result.json` produced. Post-script (label application) was skipped.
+- **Root cause: missing Vertex AI IAM binding.** The transcript shows: `Permission 'aiplatform.endpoints.predict' denied on resource '//aiplatform.googleapis.com/projects/rhdh-sidekick-167988/locations/global/publishers/anthropic/models/claude-opus-4-6'`. The WIF pool and provider are correctly configured, but the WIF principal is missing the `roles/aiplatform.user` binding on the GCP project. Per the Fullsend installation guide, this binding is required:
 
-**Step 2 — Coder:** not yet reached.
+  ```bash
+  WIF_PRINCIPAL="principalSet://iam.googleapis.com/projects/189673402608/locations/global/workloadIdentityPools/fullsend-pool/attribute.repository_owner/redhat-developer"
+  gcloud projects add-iam-policy-binding rhdh-sidekick-167988 \
+    --role="roles/aiplatform.user" \
+    --member="$WIF_PRINCIPAL" \
+    --condition=None
+  ```
 
-**Step 3 — Review:** not yet reached. Note: PR review runs are currently failing due to a sandbox container issue (Podman/OpenShell, runs `26506111752` and `26505832689`). This may block this step.
+- **This same root cause explains all agent failures** — triage, review, and coder all fail with the same 403 because none of them can call Vertex AI.
+- [ ] Apply the IAM fix, then re-trigger `/fs-triage` on issue #60.
 
-**Step 4 — Fix:** not yet reached.
+**Step 2 — Coder:** blocked by IAM fix.
 
-**Step 5 — Retro:** not yet reached.
+**Step 3 — Review:** blocked by IAM fix. (Earlier failures on runs `26506111752` and `26505832689` were attributed to a sandbox/Podman issue, but the actual root cause is the same missing IAM binding.)
+
+**Step 4 — Fix:** blocked by IAM fix.
+
+**Step 5 — Retro:** blocked by IAM fix.
 
 ### Next: first custom agent
 
@@ -259,5 +272,6 @@ We chose "Add GitHub issue templates" as the end-to-end test scenario because it
 
 ### Housekeeping
 
+- [ ] **BLOCKER: Grant `roles/aiplatform.user` to the WIF principal** — see IAM fix command in Step 1 observation log above. Without this, no agent can call Vertex AI. This is the single root cause for all agent failures.
 - [ ] Verify branch protection on `main` has "Require review from Code Owners" enabled — without this, CODEOWNERS is documentary only (flagged by review agent on PR #57).
 - [ ] Consider adding `.github/instructions/` to CODEOWNERS (also flagged by review agent).
