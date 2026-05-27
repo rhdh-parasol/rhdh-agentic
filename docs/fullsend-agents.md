@@ -264,13 +264,18 @@ We chose "Add GitHub issue templates" as the end-to-end test scenario because it
 - **Root cause: heavy image + 60s timeout in v0.10.0.** The Coder uses `ghcr.io/fullsend-ai/fullsend-code:latest` (Go toolchain, gopls, lychee) — much larger than the Triage image (`fullsend-sandbox:latest`). The v0.10.0 binary has a hardcoded 60-second sandbox ready timeout (`readyTimeout = 60 * time.Second`). Pulling the code image on a cold runner exceeds this.
 - **Fix is exactly 1 commit after v0.10.0.** Commit `1bf016d9` (directly after v0.10.0) adds pre-pull, retry with backoff, and increases the timeout to 120s. The fix is in the **Go binary**, not the workflow YAML — pinning the shim workflow to a newer SHA does not help (confirmed: the binary is downloaded separately from the latest Release tag).
 - **Attempted workaround:** Pinned shim to `@1bf016d9` — no effect, binary still came from v0.10.0 release. Reverted.
-- [ ] Ask Fullsend team to cut v0.10.1 (or v0.11.0) — the fix is already merged, just needs a tag.
+- [x] **Fullsend v0.11.0 released** — sandbox creation now takes 4.8s (pre-pull + 120s timeout). Filed and closed [fullsend#1601](https://github.com/fullsend-ai/fullsend/issues/1601).
+- **First run with v0.11.0 failed** with `policy_denied` — OpenShell blocked `sts.googleapis.com` due to "ambiguous shared socket ownership" between PIDs. Second run succeeded — this is a **transient race condition** in OpenShell's socket ownership tracker, not a persistent blocker.
+- [x] **Coder succeeded on retry** — created PR [#61](https://github.com/rhdh-parasol/rhdh-agentic/pull/61) with `bug_report.yml`, `feature_request.yml`, and `config.yml` (107 lines added).
 
-**Step 3 — Review:** blocked by Coder.
+**Step 3 — Review (PR [#61](https://github.com/rhdh-parasol/rhdh-agentic/pull/61))**
 
-**Step 4 — Fix:** blocked by Review.
+- [x] Review agent triggered automatically on PR creation.
+- [x] Review posted: flagged all files as protected path (`.github/`), requires human approval. No code-level findings.
 
-**Step 5 — Retro:** blocked by merge.
+**Step 4 — Fix:** Review did not request changes, so Fix agent has no trigger. To test the fix loop, we would need to manually request changes on the PR.
+
+**Step 5 — Retro:** waiting for merge.
 
 ### How to debug a Fullsend agent run
 
