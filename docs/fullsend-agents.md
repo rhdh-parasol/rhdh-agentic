@@ -254,15 +254,16 @@ We chose "Add GitHub issue templates" as the end-to-end test scenario because it
   ```
 
 - **This same root cause explains all agent failures** — triage, review, and coder all fail with the same 403 because none of them can call Vertex AI.
-- [ ] Apply the IAM fix, then re-trigger `/fs-triage` on issue #60.
+- [x] **IAM fix applied** — granted `roles/aiplatform.user` to the WIF `principalSet` for `redhat-developer`. Re-triggered `/fs-triage`.
+- [x] **Triage succeeded** (run `26511100971`). Labels applied: `good first issue`, `feature`, `triaged`. Agent posted a structured triage comment with category (Feature), severity (Low), recommended implementation, and a proposed test case. Quality is good — it correctly identified the scope, suggested YAML frontmatter format, and even flagged it as suitable for first-time contributors. Did **not** apply `ready-to-code` — used `triaged` instead, so the Coder agent won't auto-trigger.
 
-**Step 2 — Coder:** blocked by IAM fix.
+**Step 2 — Coder:** Triage labeled `triaged` + `feature`, not `ready-to-code`. The Coder agent auto-triggers on `ready-to-code` only. Options: (a) manually add `ready-to-code` label to test auto-trigger, or (b) use `/fs-code` slash command.
 
-**Step 3 — Review:** blocked by IAM fix. (Earlier failures on runs `26506111752` and `26505832689` were attributed to a sandbox/Podman issue, but the actual root cause is the same missing IAM binding.)
+**Step 3 — Review:** waiting for Coder to produce a PR.
 
-**Step 4 — Fix:** blocked by IAM fix.
+**Step 4 — Fix:** waiting for Review.
 
-**Step 5 — Retro:** blocked by IAM fix.
+**Step 5 — Retro:** waiting for merge.
 
 ### Next: first custom agent
 
@@ -272,6 +273,6 @@ We chose "Add GitHub issue templates" as the end-to-end test scenario because it
 
 ### Housekeeping
 
-- [ ] **BLOCKER: Grant `roles/aiplatform.user` to the WIF principal** — see IAM fix command in Step 1 observation log above. Without this, no agent can call Vertex AI. This is the single root cause for all agent failures.
+- [x] ~~**BLOCKER: Grant `roles/aiplatform.user` to the WIF principal**~~ — fixed 2026-05-27. Triage agent now working.
 - [ ] Verify branch protection on `main` has "Require review from Code Owners" enabled — without this, CODEOWNERS is documentary only (flagged by review agent on PR #57).
 - [ ] Consider adding `.github/instructions/` to CODEOWNERS (also flagged by review agent).
