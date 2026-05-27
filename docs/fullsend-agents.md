@@ -261,10 +261,10 @@ We chose "Add GitHub issue templates" as the end-to-end test scenario because it
 
 - Triggered manually via `/fs-code` comment. Dispatcher routed correctly to `code` stage.
 - **Sandbox creation timed out** (run `26514769886`): `sandbox "agent-code-3288-1779889260" not ready after 1m0s`. The gateway logged `Creating sandbox container` → then nothing for 60 seconds → timeout.
-- **Root cause: heavy image + old timeout.** The Coder uses `ghcr.io/fullsend-ai/fullsend-code:latest` (includes Go toolchain, gopls, lychee) which is much larger than the Triage image (`fullsend-sandbox:latest`). Pulling it exceeds the 60-second sandbox ready timeout.
-- **Fix exists but not released.** Fullsend commit `1bf016d9` adds pre-pull, retry with exponential backoff, and increases the default timeout to 120 seconds. However, the fix is in the **Go binary** (`fullsend run`), not in the reusable workflow YAML. The binary is downloaded separately from the latest GitHub Release tag — pinning the shim to a newer workflow SHA does not help (confirmed: pinning to `@1bf016d9` still downloaded the old binary, same 60s timeout).
-- **No workaround from our side.** The sandbox timeout is hardcoded in the released `fullsend` binary. We need the Fullsend team to cut a new release that includes commit `1bf016d9`.
-- [ ] Request new Fullsend release from the team (or ask for a pre-release binary).
+- **Root cause: heavy image + 60s timeout in v0.10.0.** The Coder uses `ghcr.io/fullsend-ai/fullsend-code:latest` (Go toolchain, gopls, lychee) — much larger than the Triage image (`fullsend-sandbox:latest`). The v0.10.0 binary has a hardcoded 60-second sandbox ready timeout (`readyTimeout = 60 * time.Second`). Pulling the code image on a cold runner exceeds this.
+- **Fix is exactly 1 commit after v0.10.0.** Commit `1bf016d9` (directly after v0.10.0) adds pre-pull, retry with backoff, and increases the timeout to 120s. The fix is in the **Go binary**, not the workflow YAML — pinning the shim workflow to a newer SHA does not help (confirmed: the binary is downloaded separately from the latest Release tag).
+- **Attempted workaround:** Pinned shim to `@1bf016d9` — no effect, binary still came from v0.10.0 release. Reverted.
+- [ ] Ask Fullsend team to cut v0.10.1 (or v0.11.0) — the fix is already merged, just needs a tag.
 
 **Step 3 — Review:** blocked by Coder.
 
