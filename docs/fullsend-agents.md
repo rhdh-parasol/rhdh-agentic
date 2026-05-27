@@ -273,9 +273,15 @@ We chose "Add GitHub issue templates" as the end-to-end test scenario because it
 - [x] Review agent triggered automatically on PR creation.
 - [x] Review posted: flagged all files as protected path (`.github/`), requires human approval. No code-level findings.
 
-**Step 4 — Fix:** Review did not request changes, so Fix agent has no trigger. To test the fix loop, we would need to manually request changes on the PR.
+**Step 4 — Fix (PR [#61](https://github.com/rhdh-parasol/rhdh-agentic/pull/61))**
 
-**Step 5 — Retro:** waiting for merge.
+- Posted a human "Request Changes" review with three concrete asks (RHDH-specific env fields, scope dropdown, Slack contact link).
+- **Auto-trigger did not fire.** The dispatcher only triggers Fix when the `changes_requested` review comes from the Review Bot — human reviews never auto-trigger Fix, even with the `fullsend-fix` label. The label gate is nested *inside* the bot-check, not parallel to it.
+- **Manual trigger via `/fs-fix` worked.** Agent ran for ~25 minutes, produced valid `fix-result.json`, passed validation and security scans.
+- **Push blocked by protected-path check.** The post-script correctly refused to push because the agent modified `.github/ISSUE_TEMPLATE/bug_report.yml` — a protected path. This is expected: agents cannot modify files under `.github/` (same guardrail that CODEOWNERS enforces).
+- **Conclusion:** The Fix agent works end-to-end, but our test scenario (issue templates under `.github/`) is incompatible with the protected-path enforcement. A real Fix test needs an issue whose files live outside protected paths.
+
+**Step 5 — Retro:** waiting for merge. Can be tested by merging PR #61 manually.
 
 ### How to debug a Fullsend agent run
 
