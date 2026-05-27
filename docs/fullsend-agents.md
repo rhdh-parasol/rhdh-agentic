@@ -206,12 +206,40 @@ These are exploration candidates — agents we could build to address RHDH-speci
 - The `requires-manual-review` label is applied automatically when the review agent detects it cannot approve alone (protected paths).
 - Generic reviews on spec PRs (PR #54) work but lack spec-domain awareness — a spec-specific review skill could add value here.
 
-### Next: validate remaining pipeline agents
+### Pipeline walkthrough: Issue Templates scenario
 
-1. **Test Triage agent** — File a real issue and verify it gets labeled (`ready-to-code`, `blocked`, etc.). This validates the front of the pipeline.
-2. **Test Coder agent** — Either via a `ready-to-code` label from triage or manually with `/fs-code`. Evaluate the generated PR quality.
-3. **Test Fix agent** — Request changes on an agent-generated PR and observe the fix loop.
-4. **Test Retro agent** — Merge an agent-generated PR and check the retrospective output.
+We chose "Add GitHub issue templates" as the end-to-end test scenario because it is bounded (only touches `.github/ISSUE_TEMPLATE/`), produces real value, and exercises every pipeline agent.
+
+**The issue to file:**
+
+> **Title:** Add GitHub issue templates for bug reports and feature requests
+>
+> We have no issue templates. Contributors file unstructured issues that are hard to triage.
+>
+> Add two templates using YAML frontmatter format (`.github/ISSUE_TEMPLATE/*.yml`):
+>
+> - **Bug report** — steps to reproduce, expected vs. actual behavior, environment info
+> - **Feature request** — problem statement, proposed solution, alternatives considered
+>
+> Also add a `config.yml` with blank-issue opt-out.
+
+**Expected pipeline flow:**
+
+| Step | Agent | What we expect | What to watch for |
+|------|-------|----------------|-------------------|
+| 1 | **Triage** | Labels issue `ready-to-code` (clear scope, no blockers) | Does it correctly identify this as a bounded, actionable task? |
+| 2 | **Coder** | Creates PR with `.github/ISSUE_TEMPLATE/bug_report.yml`, `feature_request.yml`, `config.yml` | Quality of generated YAML, field choices, whether it follows GitHub's template schema |
+| 3 | **Review** | Reviews the generated PR, posts findings | Does it validate YAML syntax? Does it catch missing fields or bad defaults? |
+| 4 | **Fix** | We manually request a small change on the PR to trigger Fix | Does it correctly interpret the feedback and apply targeted changes? |
+| 5 | **Retro** | After merge, analyzes the full lifecycle | What process improvements does it identify? Is the retro useful or generic? |
+
+**Observation log:** *(fill in as each step completes)*
+
+- [ ] Triage: label applied? time to response? findings?
+- [ ] Coder: PR created? file list? quality notes?
+- [ ] Review: review posted? severity? actionable findings?
+- [ ] Fix: change applied? did it address the feedback?
+- [ ] Retro: retro filed? useful insights?
 
 ### Next: first custom agent
 
