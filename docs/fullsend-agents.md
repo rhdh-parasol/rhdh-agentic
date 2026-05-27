@@ -233,13 +233,23 @@ We chose "Add GitHub issue templates" as the end-to-end test scenario because it
 | 4 | **Fix** | We manually request a small change on the PR to trigger Fix | Does it correctly interpret the feedback and apply targeted changes? |
 | 5 | **Retro** | After merge, analyzes the full lifecycle | What process improvements does it identify? Is the retro useful or generic? |
 
-**Observation log:** *(fill in as each step completes)*
+**Observation log:**
 
-- [ ] Triage: label applied? time to response? findings?
-- [ ] Coder: PR created? file list? quality notes?
-- [ ] Review: review posted? severity? actionable findings?
-- [ ] Fix: change applied? did it address the feedback?
-- [ ] Retro: retro filed? useful insights?
+**Step 1 — Triage (Issue [#60](https://github.com/rhdh-parasol/rhdh-agentic/issues/60))**
+
+- Issue filed 2026-05-27.
+- **Auto-trigger did not fire.** The shim workflow ran (run `26507172941`, `issues/opened`, `success`) but the upstream dispatcher (`reusable-dispatch.yml`) does not route `issues/opened` to the triage stage. The `issues)` case block only handles `labeled` actions (for `ready-to-code` and `ready-for-review` labels). `opened` and `edited` fall through to "No stage matched — skipping dispatch."
+- **Root cause:** The dispatcher's routing table does not implement auto-triage on issue creation. Triage is only reachable via the `/fs-triage` slash command (routed through the `issue_comment` handler). The pipeline docs describe auto-triage as the intended behavior, but the dispatch code does not implement it yet.
+- **Workaround:** Posted `/fs-triage` as a comment on issue #60 to trigger triage manually.
+- [ ] Awaiting triage result.
+
+**Step 2 — Coder:** not yet reached.
+
+**Step 3 — Review:** not yet reached. Note: PR review runs are currently failing due to a sandbox container issue (Podman/OpenShell, runs `26506111752` and `26505832689`). This may block this step.
+
+**Step 4 — Fix:** not yet reached.
+
+**Step 5 — Retro:** not yet reached.
 
 ### Next: first custom agent
 
