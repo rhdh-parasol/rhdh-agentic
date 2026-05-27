@@ -265,6 +265,88 @@ We chose "Add GitHub issue templates" as the end-to-end test scenario because it
 
 **Step 5 — Retro:** waiting for merge.
 
+### How to debug a Fullsend agent run
+
+When an agent fails (or you want to understand what it did), there are three layers of logs to examine.
+
+**Layer 1 — Workflow run logs (GitHub Actions UI or CLI)**
+
+Find the run, then scan for the routing decision and agent outcome:
+
+```bash
+# List recent fullsend runs
+gh run list --repo rhdh-parasol/rhdh-agentic --workflow=fullsend --limit 5
+
+# View the full log for a specific run
+gh run view <RUN_ID> --repo rhdh-parasol/rhdh-agentic --log
+
+# Filter for key events (routing, agent exit, errors)
+gh run view <RUN_ID> --repo rhdh-parasol/rhdh-agentic --log 2>/dev/null \
+  | grep -iE "Routed to stage|Agent completed|exit code|error|validation|No stage matched"
+```
+
+Key lines to look for:
+
+- `Routed to stage: triage` — dispatcher matched an agent
+- `No stage matched — skipping dispatch` — event didn't trigger any agent
+- `Agent completed (Xs)` — how long the agent ran
+- `! Agent exited with code 1` — agent crashed
+- `✗ Validation failed` — agent ran but didn't produce valid output
+- `✓ Sandbox created` / `✓ Sandbox bootstrapped` — infrastructure is working
+
+**Layer 2 — Agent transcripts (download artifact)**
+
+Every run uploads an artifact (`fullsend-<agent>`) containing the Claude conversation transcript. This is where you find the actual LLM interaction — prompts, tool calls, and error messages.
+
+```bash
+# Download the artifact
+gh run download <RUN_ID> --repo rhdh-parasol/rhdh-agentic \
+  --name fullsend-triage --dir /tmp/fullsend-debug
+
+# Find the transcript files
+find /tmp/fullsend-debug -name '*.jsonl'
+
+# Pretty-print a transcript (each line is a JSON object)
+cat /tmp/fullsend-debug/agent-*/iteration-1/transcripts/*.jsonl \
+  | python3 -c "import sys,json; [print(json.dumps(json.loads(l), indent=2)) for l in sys.stdin if l.strip()]"
+
+# Quick search for errors in transcripts
+cat /tmp/fullsend-debug/agent-*/iteration-*/transcripts/*.jsonl \
+  | grep -o '"text":"[^"]*"' | head -5
+```
+
+The transcript JSONL contains message objects with `type: "user"` or `type: "assistant"`. The assistant messages include the full API response, including error messages. For example, a Vertex AI 403 shows up as:
+
+```json
+{"type": "assistant", "error": "authentication_failed", "message": {"content": [{"text": "Permission denied..."}]}}
+```
+
+**Layer 3 — Sandbox logs (in the same artifact)**
+
+The artifact also contains OpenShell sandbox and gateway logs, useful for infrastructure issues:
+
+```bash
+# Sandbox security events (network, filesystem sandboxing)
+cat /tmp/fullsend-debug/agent-*/logs/openshell-sandbox.log | tail -20
+
+# Gateway logs (container orchestration)
+cat /tmp/fullsend-debug/agent-*/logs/openshell-gateway.log | tail -20
+# or
+cat /tmp/fullsend-debug/openshell-gateway.log | tail -20
+```
+
+**Quick triage flowchart:**
+
+```
+Run failed
+  → Check workflow log for "Routed to stage"
+     → "No stage matched" → event/action not handled by dispatcher
+     → Stage matched → check "Agent completed (Xs)"
+        → 0-1s exit code 1 → likely auth/config error → check transcript
+        → >1s exit code 1 → agent ran but failed → check transcript for tool errors
+        → exit code 0, validation failed → agent ran but output schema wrong
+```
+
 ### Next: first custom agent
 
 5. **Pick a candidate** — Workflow Doctor and CLAUDE.md Keeper are the simplest. Spec Reviewer has the most overlap with existing OpenSpec workflows (see observation above).
