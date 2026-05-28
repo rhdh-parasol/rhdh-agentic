@@ -72,6 +72,14 @@ Fullsend uses a **layered content resolution** model (ADR 0035). Customizations 
 
 **File-level replacement, not merge.** Placing `harness/code.yaml` in customized/ replaces the entire upstream harness. Copy the full upstream file first, then modify.
 
+### Customization limitations in per-repo mode
+
+Two significant limitations discovered during our adoption:
+
+**1. No custom agent stages.** In per-repo mode, the upstream `reusable-dispatch.yml` has stages hardcoded (triage, code, review, fix, retro, prioritize). The org-mode dispatcher scans workflow files for `# fullsend-stage:` markers and can discover custom agents — the per-repo reusable workflow cannot. This means custom agents cannot register their own slash command (e.g., `/fs-spec-review`). Workaround: extend an existing agent with a custom skill instead of building a standalone agent.
+
+**2. Harness overrides drift from upstream.** Because overrides are file-level replacement (not field-level merge), any upstream change to a harness file (new skill, timeout adjustment, new `host_files` entry) is silently lost when we override. There is no built-in mechanism to detect drift. Workaround: manually diff against upstream on each Fullsend release. A CI check that compares our override against the upstream scaffold would catch this automatically.
+
 ### Anatomy of a custom agent
 
 A custom agent needs three things:
