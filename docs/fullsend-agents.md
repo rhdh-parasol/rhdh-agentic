@@ -22,21 +22,37 @@ Fullsend ships 6 agent roles. Each has its own GitHub App, sandbox image, and ha
 |-------|---------|-------------|---------------|
 | **Prioritize** | Manual | RICE scoring on backlog issues | `/fs-prioritize` |
 
-### Pipeline flow
+### Auto-trigger reality (tested 2026-05-27)
+
+The table above describes the *designed* pipeline. In practice, auto-triggers have gaps:
+
+| Agent | Documented trigger | What actually happens | Workaround |
+|-------|--------------------|----------------------|------------|
+| **Triage** | `issues/opened` | Dispatcher only handles `issues/labeled`, not `opened`. No stage matched. | `/fs-triage` as issue comment |
+| **Coder** | `issues/labeled` with `ready-to-code` | Would work, but Triage never labels `ready-to-code` — it uses `triaged` instead. | `/fs-code` as issue comment |
+| **Review** | `pull_request_target/opened` | **Works.** Only agent with reliable auto-trigger. | — |
+| **Fix** | `pull_request_review/changes_requested` | Only triggers when the **review bot** requests changes, not humans. Human reviews are ignored even with `fullsend-fix` label (label check is nested inside bot check). | `/fs-fix` as PR comment |
+| **Retro** | `pull_request_target/closed` | Concurrency group collision: merge and approval events share the same group key (`fullsend-dispatch-{PR#}`). If both fire simultaneously, the `closed` event gets dropped. | `/fs-retro` as PR comment |
+
+**Net effect:** Only Review auto-triggers reliably. The rest need slash commands. This means the "autonomous pipeline" from issue to merge is currently manual-trigger-driven, not event-driven.
+
+### Pipeline flow (designed vs. actual)
 
 ```
-Issue filed
-  --> Triage (auto)
-        |
-        +--> ready-to-code
-        |      --> Coder (auto) --> PR opened
-        |                            --> Review (auto)
-        |                                  |
-        |                                  +--> approved --> ready-for-merge --> human merges
-        |                                  +--> changes requested --> Fix (auto) --> re-review
-        |                                  +--> requires-manual-review --> human decides
-        |
-        +--> blocked / duplicate / not-ready / not-reproducible
+Designed:                              Actual:
+Issue filed                            Issue filed
+  --> Triage (auto)                      --> (nothing happens)
+        |                                      --> human posts /fs-triage
+        +--> ready-to-code                     --> labels "triaged" (not ready-to-code)
+               --> Coder (auto)                --> human posts /fs-code
+                    --> PR opened                    --> PR opened
+                         --> Review (auto)                --> Review (auto) ✅
+                         --> changes requested            --> human posts /fs-fix
+                              --> Fix (auto)              --> Fix runs, pushes
+                              --> re-review               --> re-review ✅
+                    --> human merges                  --> human merges
+                         --> Retro (auto)                  --> (dropped by concurrency)
+                                                           --> human posts /fs-retro
 ```
 
 ## Customization system
