@@ -382,5 +382,6 @@ Run failed
 ### Housekeeping
 
 - [x] ~~**BLOCKER: Grant `roles/aiplatform.user` to the WIF principal**~~ — fixed 2026-05-27. Triage agent now working.
+- [ ] **Grant `fullsend-ai-retro` app access to `rhdh-agentic`** — the retro post-script fails with `Resource not accessible by integration` (403) because the app's `repo_selection: selected` does not include this repo. Fix: [Org Settings → Installed Apps → fullsend-ai-retro → Configure](https://github.com/organizations/redhat-developer/settings/installations/133995811) → add `rhdh-agentic` to repository access. Without this, retro proposals are only available as run artifacts, not posted as issues/comments.
 - [ ] Verify branch protection on `main` has "Require review from Code Owners" enabled — without this, CODEOWNERS is documentary only (flagged by review agent on PR #57).
 - [ ] Consider adding `.github/instructions/` to CODEOWNERS (also flagged by review agent).
