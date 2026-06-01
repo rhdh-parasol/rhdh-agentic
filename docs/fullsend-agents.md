@@ -309,11 +309,12 @@ We chose "Add GitHub issue templates" as the end-to-end test scenario because it
 
 - **Auto-trigger did not fire** on merge. The `closed` event and the `pull_request_review` event (from our approval) hit the same concurrency group simultaneously. The review-run got the lock; the retro-run was dropped.
 - **Manual trigger via `/fs-retro` worked.** Agent ran for ~9 minutes, produced valid `retro-result.json`.
-- **Post-script failed** with `Resource not accessible by integration` (403) — the `fullsend-ai-retro` GitHub App token lacks permission to post comments on this repo. The retro output was captured in the run artifact but never posted to the PR.
-- [x] **Retro content is excellent.** Two concrete improvement proposals filed:
-  1. **Warn early when `/fs-fix` targets protected paths** — pre-flight check before running the fix agent, to avoid wasting a 25-minute cycle on a guaranteed block.
-  2. **Triage should label well-scoped issues `ready-to-code` more readily** — when an issue specifies exact file paths and describes a well-known pattern, default to `ready-to-code`.
-- Both proposals target `fullsend-ai/fullsend` and include validation criteria.
+- **Post-script partially works.** The retro agent successfully filed improvement proposals as issues on `fullsend-ai/fullsend` ([#1617](https://github.com/fullsend-ai/fullsend/issues/1617), [#1618](https://github.com/fullsend-ai/fullsend/issues/1618), [#1731](https://github.com/fullsend-ai/fullsend/issues/1731)). But posting the summary comment on our PR fails with `Resource not accessible by integration` (403).
+- **Root cause: Mint token scoping.** The Mint generates a token scoped to the `fullsend-ai` org's Retro App installation (which has access to `fullsend-ai/fullsend`), but the token does not cover `rhdh-parasol/rhdh-agentic`. The Retro App is installed on `redhat-developer` with `rhdh-agentic` in its repo list, but the Mint does not use that installation. This is a Fullsend platform issue — the Mint needs to generate tokens for the correct org's App installation.
+- [x] **Retro content is excellent.** Proposals filed directly as GitHub issues on `fullsend-ai/fullsend`:
+  1. [#1617](https://github.com/fullsend-ai/fullsend/issues/1617) — Warn when `/fs-fix` targets protected-path PRs
+  2. [#1618](https://github.com/fullsend-ai/fullsend/issues/1618) — Triage should label well-scoped issues `ready-to-code` more readily
+  3. [#1731](https://github.com/fullsend-ai/fullsend/issues/1731) — Fix agent should pre-check protected-path feasibility
 
 ### How to debug a Fullsend agent run
 
@@ -397,15 +398,32 @@ Run failed
         → exit code 0, validation failed → agent ran but output schema wrong
 ```
 
-### Next: first custom agent
+### First custom agent: OpenSpec Spec Reviewer
 
-5. **Pick a candidate** — Workflow Doctor and CLAUDE.md Keeper are the simplest. Spec Reviewer has the most overlap with existing OpenSpec workflows (see observation above).
-6. **Evaluate Spec Reviewer overlap** — Compare the generic review output on spec PRs against what a spec-aware agent could catch (completeness against OpenSpec template, cross-references to existing specs).
-7. **Build the three artifacts** — Agent definition (`.md`), harness config (`.yaml`), and skill. Use `gh-classify` from nonflux/integration-service as the template.
+**Approach chosen:** Skill extension of the existing review agent (not a standalone agent).
+
+**Why not a standalone agent?** In per-repo mode, the upstream `reusable-dispatch.yml` has stages hardcoded (triage, code, review, fix, retro, prioritize). There is no stage-marker scanning like in org-mode. Custom agents cannot register their own stage or slash command. No existing Fullsend issue tracks this limitation for per-repo mode.
+
+**What we did:** Override both the review harness and agent prompt in `.fullsend/customized/`:
+
+- `harness/review.yaml` — adds `openspec-review` skill to the skill list
+- `agents/review.md` — adds dimension 8 ("OpenSpec completeness") and skill routing for `openspec-review`
+- `skills/openspec-review/SKILL.md` — domain knowledge about artifact sequencing and quality criteria
+
+**Key learning:** Overriding only the harness (adding the skill) is not enough — the agent prompt must also list the skill in its routing section, otherwise the agent never invokes it. Both files must be overridden.
+
+**Test result (PR #58):** The enhanced review now produces `[openspec-sequencing]` and `[openspec-quality]` info findings alongside the standard code review. On PR #58 it correctly identified the stacked-PR dependency (proposal+design on PR #40's branch) and assessed spec quality.
+
+**What we lose:**
+
+- No `/fs-spec-review` slash command — cannot trigger independently
+- Harness and agent overrides drift from upstream — must manually sync on Fullsend releases
+- Findings mix with code review in one comment
 
 ### Housekeeping
 
-- [x] ~~**BLOCKER: Grant `roles/aiplatform.user` to the WIF principal**~~ — fixed 2026-05-27. Triage agent now working.
-- [ ] **Grant `fullsend-ai-retro` app access to `rhdh-agentic`** — the retro post-script fails with `Resource not accessible by integration` (403) because the app's `repo_selection: selected` does not include this repo. Fix: [Org Settings → Installed Apps → fullsend-ai-retro → Configure](https://github.com/organizations/redhat-developer/settings/installations/133995811) → add `rhdh-agentic` to repository access. Without this, retro proposals are only available as run artifacts, not posted as issues/comments.
-- [ ] Verify branch protection on `main` has "Require review from Code Owners" enabled — without this, CODEOWNERS is documentary only (flagged by review agent on PR #57).
-- [ ] Consider adding `.github/instructions/` to CODEOWNERS (also flagged by review agent).
+- [x] ~~**BLOCKER: Grant `roles/aiplatform.user` to the WIF principal**~~ — fixed 2026-05-27.
+- [ ] **Retro post-script 403** — the Mint generates tokens scoped to the `fullsend-ai` org's Retro App installation, not the `redhat-developer` installation. Filing issues on `fullsend-ai/fullsend` works; posting comments on `rhdh-agentic` PRs does not. App is already installed with repo access — the issue is in how the Mint scopes tokens for cross-org repos. Needs upstream fix or investigation.
+- [ ] **Sync overrides on Fullsend releases** — `.fullsend/customized/agents/review.md` and `harness/review.yaml` are full-file overrides that drift from upstream. Diff against the scaffold on each release.
+- [ ] Verify branch protection on `main` has "Require review from Code Owners" enabled.
+- [ ] Consider adding `.github/instructions/` to CODEOWNERS.
