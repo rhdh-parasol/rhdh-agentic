@@ -420,10 +420,33 @@ Run failed
 - Harness and agent overrides drift from upstream — must manually sync on Fullsend releases
 - Findings mix with code review in one comment
 
+### Upgrade to v0.12.0 (2026-06-01)
+
+**Version confirmed:** The `@v0` floating tag resolves to v0.12.0 (`71474625`). The shim workflow (`fullsend.yaml`) references `@v0`, so reusable workflows and the binary are already running v0.12.0 without a workflow change.
+
+**Config change applied:** Added `fix` to the explicit `roles:` list in `.fullsend/config.yaml`. v0.12.0 added fix to `PerRepoDefaultRoles`, but since our config explicitly overrides the default role list, the fix role was missing. Without this, the dispatcher could not route `/fs-fix` through the dispatch loop.
+
+**Override drift check (v0.12.0):** Diffed our customized `harness/review.yaml` and `agents/review.md` against the upstream scaffold at `internal/scaffold/fullsend-repo/`. **No drift detected** — the upstream files are identical to what we based our overrides on. Our only additions are the intentional OpenSpec review extensions (dimension 8, `openspec-review` skill).
+
+**Notable v0.12.0 improvements available to us:**
+
+| Feature | Impact |
+|---------|--------|
+| `--force` in `/fs-code` comment body | Skips existing-PR check — can re-trigger coder even when a PR exists |
+| Accumulate prior analysis on triage re-runs | Re-triaging preserves earlier context instead of starting fresh |
+| Stale lock recovery | Fewer stuck runs from concurrency group collisions |
+| Token scope logging at startup | Easier debugging when Mint/IAM issues recur |
+| Separate WIF pool from mint | Prevents cross-domain interference (relevant to our multi-org setup) |
+| Content-addressed cache for remote resources | Faster sandbox bootstrapping on warm runners |
+
+**Breaking change (CLI only):** `--source-org` renamed to `--app-set` in `mint enroll`. Does not affect workflow config — only relevant if running `fullsend` CLI commands manually.
+
 ### Housekeeping
 
 - [x] ~~**BLOCKER: Grant `roles/aiplatform.user` to the WIF principal**~~ — fixed 2026-05-27.
+- [x] ~~**Add `fix` role to config.yaml**~~ — fixed 2026-06-01 during v0.12.0 upgrade.
+- [x] ~~**Sync overrides against v0.12.0 scaffold**~~ — diffed 2026-06-01, no drift detected.
 - [ ] **Retro post-script 403** — the Mint generates tokens scoped to the `fullsend-ai` org's Retro App installation, not the `redhat-developer` installation. Filing issues on `fullsend-ai/fullsend` works; posting comments on `rhdh-agentic` PRs does not. App is already installed with repo access — the issue is in how the Mint scopes tokens for cross-org repos. Needs upstream fix or investigation.
-- [ ] **Sync overrides on Fullsend releases** — `.fullsend/customized/agents/review.md` and `harness/review.yaml` are full-file overrides that drift from upstream. Diff against the scaffold on each release.
+- [ ] **Sync overrides on future Fullsend releases** — `.fullsend/customized/agents/review.md` and `harness/review.yaml` are full-file overrides that drift from upstream. Diff against the scaffold on each release. Last checked: v0.12.0 (clean).
 - [ ] Verify branch protection on `main` has "Require review from Code Owners" enabled.
 - [ ] Consider adding `.github/instructions/` to CODEOWNERS.
