@@ -56,11 +56,18 @@ echo "HTTP_PROXY=$HTTP_PROXY"
 echo "HTTPS_PROXY=$HTTPS_PROXY"
 echo "YARN_HTTP_PROXY=$YARN_HTTP_PROXY"
 echo "YARN_HTTPS_PROXY=$YARN_HTTPS_PROXY"
+echo "--- curl tests (curl may be blocked by policy — that's expected) ---"
 curl -s -o /dev/null -w "registry.npmjs.org: HTTP %{http_code}\n" \
-  --connect-timeout 5 https://registry.npmjs.org 2>&1 || echo "npm registry unreachable"
+  --connect-timeout 5 https://registry.npmjs.org 2>&1 || echo "npm registry unreachable (curl)"
 curl -s -o /dev/null -w "repo.yarnpkg.com: HTTP %{http_code}\n" \
-  --connect-timeout 5 https://repo.yarnpkg.com 2>&1 || echo "yarn repo unreachable"
+  --connect-timeout 5 https://repo.yarnpkg.com 2>&1 || echo "yarn repo unreachable (curl)"
+echo "--- node/yarn tests (these binaries ARE in the policy) ---"
+node -e "fetch('https://registry.npmjs.org').then(r => console.log('npm via node: HTTP ' + r.status)).catch(e => console.log('npm via node: FAILED ' + e.message))" 2>&1 || echo "node fetch failed"
+timeout 10 yarn config get npmRegistryServer 2>&1 || echo "yarn config failed"
+echo "--- DNS ---"
 nslookup github.com 2>&1 | head -5 || echo "dns lookup failed"
+echo "--- gh API test (gh is in policy) ---"
+timeout 10 gh api rate_limit --jq '.rate.remaining' 2>&1 || echo "gh api failed"
 ```
 
 ## 5. Node.js & Tools
