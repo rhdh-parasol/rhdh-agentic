@@ -19,7 +19,7 @@ host_files:
   - src: env/gcp-vertex.env
     dest: /sandbox/workspace/.env.d/gcp-vertex.env
     expand: true
-  - src: customized/env/rhdh-toolchain.env
+  - src: env/rhdh-toolchain.env
     dest: /sandbox/workspace/.env.d/rhdh-toolchain.env
   - src: ${GOOGLE_APPLICATION_CREDENTIALS}
     dest: /tmp/.gcp-credentials.json
