@@ -42,10 +42,21 @@ echo "readlink yarn: $(readlink -f $(which yarn 2>/dev/null) 2>&1)"
 ```bash
 echo "=== COREPACK_HOME ==="
 echo "COREPACK_HOME=$COREPACK_HOME"
-ls -la "$COREPACK_HOME" 2>&1 || echo "directory missing"
+ls -laR "$COREPACK_HOME" 2>&1 | head -20 || echo "directory missing"
+echo "--- writability ---"
 touch "$COREPACK_HOME/.write-test" 2>&1 \
-  && echo "writable: YES" && rm "$COREPACK_HOME/.write-test" \
-  || echo "writable: NO"
+  && echo "$COREPACK_HOME writable: YES" && rm "$COREPACK_HOME/.write-test" \
+  || echo "$COREPACK_HOME writable: NO"
+if [ -d "$COREPACK_HOME/v1" ]; then
+  touch "$COREPACK_HOME/v1/.write-test" 2>&1 \
+    && echo "$COREPACK_HOME/v1 writable: YES" && rm "$COREPACK_HOME/v1/.write-test" \
+    || echo "$COREPACK_HOME/v1 writable: NO ⚠ (corepack needs write access here)"
+else
+  echo "$COREPACK_HOME/v1: does not exist (corepack will create on first use)"
+fi
+echo "--- yarn version in cache vs repo ---"
+echo "cached: $(ls "$COREPACK_HOME/v1/yarn/" 2>/dev/null || echo 'none')"
+echo "repo packageManager: $(cat package.json 2>/dev/null | grep -o '"packageManager":[^,]*' || echo 'not found')"
 ```
 
 ## 4. Network / Proxy
