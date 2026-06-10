@@ -1,5 +1,5 @@
 # Override of upstream code harness.
-# Sandbox-debug agent with 5-min timeout for image validation.
+# Sandbox-debug agent with 10-min timeout for image validation.
 # Full file replacement — must include all upstream fields.
 agent: agents/code.md
 model: opus
@@ -33,4 +33,4 @@ runner_env:
   REPO_DIR: "${GITHUB_WORKSPACE}/target-repo"
   TARGET_BRANCH: "${TARGET_BRANCH}"
 
-timeout_minutes: 5
+timeout_minutes: 10
