@@ -1,0 +1,131 @@
+# Standalone debug agent workflow.
+# Runs sandbox diagnostics using the coder GitHub App identity.
+# Triggered via /fs-debug slash command (dispatched by fullsend-debug-dispatch.yml)
+# or manually via workflow_dispatch.
+name: fullsend-debug
+
+permissions:
+  contents: read
+  id-token: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      issue_key:
+        description: 'Issue number'
+        required: true
+        type: string
+      issue_source:
+        description: 'Issue source'
+        required: false
+        type: string
+        default: 'github'
+
+concurrency:
+  group: debug-${{ inputs.issue_key || 'manual' }}
+  cancel-in-progress: true
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Checkout target repo
+        uses: actions/checkout@v6
+        with:
+          path: target-repo
+
+      - name: Checkout upstream defaults
+        uses: actions/checkout@v6
+        with:
+          repository: fullsend-ai/fullsend
+          ref: v0
+          path: .defaults
+          sparse-checkout: |
+            internal/scaffold/fullsend-repo/
+            .github/actions/
+            .github/scripts/
+
+      - name: Prepare workspace
+        run: |
+          set -euo pipefail
+          SRC=".defaults/internal/scaffold/fullsend-repo"
+          LAYERED_DIRS="agents skills schemas harness policies scripts env"
+          for dir in ${LAYERED_DIRS}; do
+            if [[ -d "${SRC}/${dir}" ]]; then
+              mkdir -p ".fullsend/${dir}"
+              cp -r "${SRC}/${dir}/." ".fullsend/${dir}/"
+            fi
+          done
+          for dir in ${LAYERED_DIRS}; do
+            if [[ -d ".fullsend/customized/${dir}" ]]; then
+              find ".fullsend/customized/${dir}" -type f ! -name '.gitkeep' -print0 \
+                | while IFS= read -r -d '' f; do
+                    rel="${f#".fullsend/customized/"}"
+                    mkdir -p ".fullsend/$(dirname "${rel}")"
+                    cp "${f}" ".fullsend/${rel}"
+                  done
+            fi
+          done
+          mkdir -p .github/scripts
+          cp "${SRC}/.github/scripts/setup-agent-env.sh" .github/scripts/setup-agent-env.sh 2>/dev/null || true
+
+      - name: Validate enrollment
+        id: repo-parts
+        uses: ./.defaults/.github/actions/validate-enrollment
+        with:
+          source_repo: ${{ github.repository }}
+          install_mode: per-repo
+
+      - name: Mint coder token
+        id: app-token
+        uses: ./.defaults/.github/actions/mint-token
+        with:
+          role: coder
+          repos: ${{ steps.repo-parts.outputs.name }}
+          mint_url: ${{ vars.FULLSEND_MINT_URL }}
+
+      - name: Setup GCP and prepare credentials
+        uses: ./.defaults/.github/actions/setup-gcp
+        with:
+          gcp_wif_provider: ${{ secrets.FULLSEND_GCP_WIF_PROVIDER }}
+          gcp_project_id: ${{ secrets.FULLSEND_GCP_PROJECT_ID }}
+
+      - name: Setup agent environment
+        env:
+          AGENT_PREFIX: DEBUG_
+          DEBUG_GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          DEBUG_TARGET_REPO_DIR: target-repo
+          DEBUG_ANTHROPIC_VERTEX_PROJECT_ID: ${{ secrets.FULLSEND_GCP_PROJECT_ID }}
+          DEBUG_CLOUD_ML_REGION: ${{ vars.FULLSEND_GCP_REGION }}
+          DEBUG_ISSUE_NUMBER: ${{ inputs.issue_key }}
+        run: bash .github/scripts/setup-agent-env.sh
+
+      - name: Install fullsend CLI
+        uses: fullsend-ai/fullsend@v0
+        with:
+          agent: __install_only__
+
+      - name: Run debug agent
+        env:
+          ISSUE_NUMBER: ${{ inputs.issue_key }}
+          REPO_FULL_NAME: ${{ github.repository }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          ANTHROPIC_VERTEX_PROJECT_ID: ${{ secrets.FULLSEND_GCP_PROJECT_ID }}
+          CLOUD_ML_REGION: ${{ vars.FULLSEND_GCP_REGION }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$GITHUB_WORKSPACE/output"
+          fullsend run debug \
+            --fullsend-dir "$GITHUB_WORKSPACE/.fullsend" \
+            --target-repo "$GITHUB_WORKSPACE/target-repo" \
+            --output-dir "$GITHUB_WORKSPACE/output"
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fullsend-debug
+          path: ${{ github.workspace }}/output

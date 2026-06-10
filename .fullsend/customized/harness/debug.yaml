@@ -1,0 +1,30 @@
+# harness/debug.yaml — sandbox environment diagnostics.
+#
+# Reuses the code agent's sandbox identity: same image, same policy,
+# same host_files. Only the agent prompt and timeout differ.
+# No pre/post scripts — pure read-only diagnostics.
+agent: agents/debug.md
+model: opus
+image: ghcr.io/redhat-developer/rhdh-fullsend-code:latest
+policy: policies/code.yaml
+
+host_files:
+  - src: env/gcp-vertex.env
+    dest: /sandbox/workspace/.env.d/gcp-vertex.env
+    expand: true
+  - src: env/code-agent.env
+    dest: /sandbox/workspace/.env.d/code-agent.env
+    expand: true
+  - src: env/rhdh-toolchain.env
+    dest: /sandbox/workspace/.env.d/rhdh-toolchain.env
+  - src: ${GOOGLE_APPLICATION_CREDENTIALS}
+    dest: /tmp/.gcp-credentials.json
+  - src: ${GCP_OIDC_TOKEN_FILE}
+    dest: /sandbox/workspace/.gcp-oidc-token
+    optional: true
+
+runner_env:
+  REPO_FULL_NAME: "${REPO_FULL_NAME}"
+  ISSUE_NUMBER: "${ISSUE_NUMBER}"
+
+timeout_minutes: 10
