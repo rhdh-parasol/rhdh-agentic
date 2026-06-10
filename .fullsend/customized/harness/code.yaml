@@ -1,0 +1,35 @@
+# Override of upstream code harness.
+# Sandbox-debug agent with 5-min timeout for image validation.
+# Full file replacement — must include all upstream fields.
+agent: agents/code.md
+model: opus
+image: ghcr.io/redhat-developer/rhdh-fullsend-code:latest
+
+pre_script: scripts/pre-code.sh
+post_script: scripts/post-code.sh
+
+host_files:
+  - src: env/gcp-vertex.env
+    dest: /tmp/workspace/.env.d/gcp-vertex.env
+    expand: true
+  - src: env/code-agent.env
+    dest: /tmp/workspace/.env.d/code-agent.env
+    expand: true
+  - src: ${GOOGLE_APPLICATION_CREDENTIALS}
+    dest: /tmp/workspace/.gcp-credentials.json
+  - src: ${GCP_OIDC_TOKEN_FILE}
+    dest: /tmp/workspace/.gcp-oidc-token
+    optional: true
+
+skills:
+  - skills/code-implementation
+
+runner_env:
+  PUSH_TOKEN: "${PUSH_TOKEN}"
+  PUSH_TOKEN_SOURCE: "${PUSH_TOKEN_SOURCE}"
+  REPO_FULL_NAME: "${REPO_FULL_NAME}"
+  ISSUE_NUMBER: "${ISSUE_NUMBER}"
+  REPO_DIR: "${GITHUB_WORKSPACE}/target-repo"
+  TARGET_BRANCH: "${TARGET_BRANCH}"
+
+timeout_minutes: 5

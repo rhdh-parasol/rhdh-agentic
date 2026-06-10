@@ -1,0 +1,3 @@
+[submodule "docs/demo-transcripts"]
+	path = docs/demo-transcripts
+	url = git@github.com:rhdh-parasol/demo-transcripts.git
