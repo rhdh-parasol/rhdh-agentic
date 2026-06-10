@@ -8,6 +8,8 @@ model: opus
 image: ghcr.io/redhat-developer/rhdh-fullsend-code:latest
 policy: policies/code.yaml
 
+post_script: scripts/post-debug.sh
+
 host_files:
   - src: env/gcp-vertex.env
     dest: /sandbox/workspace/.env.d/gcp-vertex.env
@@ -26,5 +28,7 @@ host_files:
 runner_env:
   REPO_FULL_NAME: "${REPO_FULL_NAME}"
   ISSUE_NUMBER: "${ISSUE_NUMBER}"
+  RUN_URL: "${RUN_URL}"
+  GH_TOKEN: "${GH_TOKEN}"
 
 timeout_minutes: 10
