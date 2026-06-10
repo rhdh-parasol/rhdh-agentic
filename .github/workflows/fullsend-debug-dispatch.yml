@@ -6,7 +6,6 @@ permissions:
   actions: write
   contents: read
   issues: write
-  metadata: read
 
 on:
   issue_comment:
@@ -27,6 +26,7 @@ jobs:
         run: |
           gh workflow run fullsend-debug.yml \
             --repo "$REPO" \
+            --ref main \
             -f issue_key="$ISSUE_NUMBER" \
             -f issue_source="github"
 
