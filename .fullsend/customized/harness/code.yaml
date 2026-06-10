@@ -4,6 +4,7 @@
 agent: agents/code.md
 model: opus
 image: ghcr.io/redhat-developer/rhdh-fullsend-code:latest
+policy: policies/code.yaml
 
 pre_script: scripts/pre-code.sh
 post_script: scripts/post-code.sh
