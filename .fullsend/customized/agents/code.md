@@ -1,4 +1,6 @@
 ---
+# forked-from: fullsend v0.17.0 scaffold (heavily customized — Phase 1/2 pattern)
+# last-synced: 2026-06-16
 name: code
 description: >-
   Code agent with environment diagnostics. Runs quick diagnostics

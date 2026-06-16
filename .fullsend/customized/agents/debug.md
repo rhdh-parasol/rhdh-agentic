@@ -1,4 +1,6 @@
 ---
+# forked-from: custom (no upstream equivalent)
+# last-synced: 2026-06-16
 name: debug
 description: >-
   Sandbox environment diagnostics. Verifies env vars, toolchain,

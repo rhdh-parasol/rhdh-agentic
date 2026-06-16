@@ -1,7 +1,10 @@
 # Override of upstream code harness.
 # Custom code harness for RHDH.
 # Full file replacement — must include all upstream fields.
+# forked-from: fullsend v0.17.0 scaffold
+# last-synced: 2026-06-16
 agent: agents/code.md
+doc: docs/agents/code.md
 model: opus
 image: ghcr.io/redhat-developer/rhdh-fullsend-code:latest
 policy: policies/code.yaml
@@ -26,6 +29,9 @@ host_files:
 
 skills:
   - skills/code-implementation
+
+plugins:
+  - plugins/gopls-lsp
 
 runner_env:
   PUSH_TOKEN: "${PUSH_TOKEN}"

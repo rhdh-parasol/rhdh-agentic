@@ -1,6 +1,8 @@
 # Override of upstream review harness.
 # Adds openspec-review skill for OpenSpec artifact validation.
 # Full file replacement — must include all upstream fields.
+# forked-from: fullsend v0.17.0 scaffold
+# last-synced: 2026-06-16
 agent: agents/review.md
 doc: docs/agents/review.md
 model: opus
