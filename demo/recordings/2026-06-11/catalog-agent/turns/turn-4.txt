@@ -1,0 +1,53 @@
+Here's the template and exactly how you'd fill it out for your service.
+
+---
+
+## Template: `parasol-quarkus-service`
+
+Tagged `recommended` — explicitly designed for Claims, Underwriting, Policy Administration, and Billing domains. Produces a Maven project with REST endpoint, health checks, metrics, and a `catalog-info.yaml`.
+
+### Step 1 — Service Information (all required)
+
+| Parameter | Type | Your Value |
+|---|---|---|
+| **name** | `string` (kebab-case, `^[a-z][a-z0-9-]*$`) | `claims-payment-reconciliation-service` |
+| **description** | `string` | "Reconciles outbound claim settlement and supplier disbursements against bank confirmation files. Detects unmatched, failed, and duplicate payments and feeds results back to reserve and status tracking." |
+| **owner** | Entity picker (Group kind) | `group:default/claims-engineering` |
+| **system** | Entity picker (System kind) | `system:default/claims-payment-system` |
+
+### Step 2 — Java Configuration
+
+| Parameter | Type | Default | Your Value |
+|---|---|---|---|
+| **groupId** | `string` | `com.parasol` | `com.parasol.claims` |
+| **artifactId** | `string` | *(service name)* | `claims-payment-reconciliation-service` |
+| **javaPackageName** | `string` | `com.parasol` | `com.parasol.claims.reconciliation` |
+| **port** | `number` | `8080` | `8080` (keep default) |
+
+### What the Template Produces
+
+The scaffolder runs two steps:
+
+1. **`fetch:template`** — pulls the Quarkus skeleton (Maven project structure, REST endpoint, health/metrics wiring)
+2. **`fetch:template`** — generates a `catalog-info.yaml` with your owner, system, and `stack: java` tag pre-filled
+
+You'll get a ready-to-run Quarkus project registered in the catalog under `claims-payment-system`, owned by `claims-engineering`.
+
+---
+
+### Why Not the Other Templates?
+
+| Template | Why Not |
+|---|---|
+| `parasol-python-service` | Claims governance **requires Java/Quarkus** for transactional services. Python is only allowed for ML/analytical workloads. The billing-payments domain got a Python exception for their reconciliation batch job, but you're in the claims domain — no such exception exists |
+| `parasol-nodejs-service` | Only allowed for BFF and I/O-bound notification services. Your service is transactional (matching payments, updating reserves) |
+
+`★ Insight ─────────────────────────────────────`
+**The template doesn't wire up Kafka or IBM MQ.** It gives you a REST skeleton with health checks and metrics. You'll need to add the Kafka consumer configuration yourself — specifically the `quarkus-messaging-kafka` extension for consuming claim lifecycle events (`payment.disbursed`, `settlement.approved`, etc.). Per claims governance, Kafka is the right choice here since you're not on the payment-critical path.
+
+**The `catalog-info.yaml` is the key artifact.** It registers your service in the Backstage catalog with the correct `system: claims-payment-system` and `owner: claims-engineering`. You'll want to add `dependsOn` entries for `claims-payment-disbursement-service` and `claims-settlement-service` after scaffolding — those won't be auto-generated, but they'll make the dependency graph accurate in the catalog.
+
+**The `groupId` convention matters.** Existing claims services use `com.parasol` as the base, but scoping to `com.parasol.claims.reconciliation` keeps your package namespace clean and avoids collisions with the 27 other claims components. Check what the `claims-payment-disbursement-service` uses to stay consistent.
+`─────────────────────────────────────────────────`
+
+Want me to scaffold it, or do you want to review anything else first?

@@ -1,0 +1,58 @@
+Here's the full picture of Parasol Insurance's catalog and where payment reconciliation fits.
+
+---
+
+## Parasol Insurance — Domain Map
+
+The catalog has **505 entities** across **10 domains**:
+
+| Domain | Owner | Focus |
+|--------|-------|-------|
+| **claims** | claims-engineering | FNOL, triage, fraud, settlement, subrogation, litigation |
+| **billing-payments** | billing-payments-engineering | Premium collection, installments, direct debit, refunds |
+| **policy-administration** | policy-platform-engineering | Policy lifecycle: inception, endorsements, renewals, cancellations |
+| **underwriting** | underwriting-engineering | Rating engines, risk assessment, renewal management |
+| **personal-auto** | personal-lines-engineering | Motor/auto for individuals, telematics, fleet |
+| **life-annuities** | life-annuities-engineering | Term life, universal life, annuities, pensions |
+| **commercial-lines** | commercial-lines-engineering | Commercial property, liability, workers' comp |
+| **specialty-lines** | specialty-lines-engineering | Cyber, marine, aviation, trade credit |
+| **reinsurance** | reinsurance-engineering | Treaty placement, facultative, bordereau, cession |
+| **platform-engineering** | parasol-platform-engineering | IAM, API gateway, service mesh, IDP |
+
+---
+
+## Where Does Payment Reconciliation Fit?
+
+**⚠️ There's already a `payment-reconciliation-service` in production.** It lives in:
+
+> **billing-payments** → **payment-processing-system** → `payment-reconciliation-service`
+
+It reconciles inbound payment files from banks, card acquirers, and direct debit clearing houses against the billing ledger. It depends on:
+- `billing-account-ledger-service` (the double-entry billing ledger)
+- `payment-gateway-service`
+
+It sits alongside `payment-fraud-screening-service` in the same system. Owned by **billing-payments-engineering**.
+
+---
+
+## The Key Question for You
+
+As someone on the **Claims team**, you have two distinct reconciliation scenarios:
+
+1. **Premium payment reconciliation** — already handled by the existing service above, owned by billing-payments-engineering. This is *not your domain*.
+
+2. **Claims payment reconciliation** — matching outbound settlement disbursements (BACS/SEPA/ACH) against bank confirmations. The `claims-payment-system` currently has 5 components but **no reconciliation service**. That's the gap.
+
+If your service is about reconciling **claim settlement payments**, it belongs in:
+
+> **claims** → **claims-payment-system** → `claims-payment-reconciliation-service`
+
+It would naturally depend on `claims-payment-disbursement-service` (which executes the payments) and `claims-settlement-service` (which calculates net payables).
+
+`★ Insight ─────────────────────────────────────`
+**Domain boundaries matter here.** Premium reconciliation (money coming *in*) and claims reconciliation (money going *out*) are fundamentally different flows owned by different teams. Building a second "payment-reconciliation-service" in the claims domain would be correct — they serve different business functions despite the similar name. The existing service in billing-payments reconciles *bank inflows*; yours would reconcile *disbursement confirmations*.
+
+**Talk to billing-payments-engineering first.** Their existing service has patterns for bank file parsing and exception queuing that you'll likely want to reuse or align with, even if your service is in a different domain.
+`─────────────────────────────────────────────────`
+
+What's the scope of your reconciliation service — is it claims settlements going *out*, or something else?

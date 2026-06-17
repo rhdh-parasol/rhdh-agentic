@@ -1,0 +1,106 @@
+Here's the complete integration map for your claims payment reconciliation service.
+
+---
+
+## Integration Map
+
+### Primary — Same System (`claims-payment-system`)
+
+These are your direct neighbors. You'll depend on most of them.
+
+```
+                          claims-payment-system
+┌─────────────────────────────────────────────────────────────────┐
+│                                                                 │
+│  claims-settlement-service ──► claims-payment-disbursement-svc  │
+│    Calculates net payable         Executes BACS/SEPA/ACH,       │
+│    after deductible, excess,      cheque, digital wallet.       │
+│    co-insurance, subrogation.     Dual-control for high-value.  │
+│    Creates payment instructions.  Maintains payment audit trail.│
+│         │                              │                        │
+│         │         ┌────────────────────┘                        │
+│         ▼         ▼                                             │
+│  ╔══════════════════════════════╗                                │
+│  ║  YOUR RECONCILIATION SERVICE ║ ◄─── bank confirmation files  │
+│  ╚══════════════════════════════╝                                │
+│         │         │                                             │
+│         │         ▼                                             │
+│         │  supplier-payment-service                             │
+│         │    Pays garages, contractors,                         │
+│         │    medical providers, solicitors.                     │
+│         │    Invoice matching + batch processing.              │
+│         │                                                       │
+│         ▼                                                       │
+│  bank-account-validation-service                                │
+│    Sort code lookups, IBAN validation,                          │
+│    Open Banking account verification.                          │
+│    (Node.js — the one non-Java service)                        │
+│                                                                 │
+│  subrogation-recovery-service                                   │
+│    Inbound recovery payments from                               │
+│    at-fault parties — also need recon.                          │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+| Service | Why You Need It | Integration Pattern |
+|---|---|---|
+| **claims-payment-disbursement-service** | Source of truth for *what payments were sent*. You match bank confirmations against its records | REST call or Kafka event (`payment.disbursed`) |
+| **claims-settlement-service** | Provides expected amounts. Cross-reference for over/underpayment detection | REST call to look up settlement instructions |
+| **supplier-payment-service** | Supplier payments (garages, medical) also need reconciliation against supplier bank confirmations | REST call or Kafka event (`supplier.payment.sent`) |
+| **subrogation-recovery-service** | Inbound recovery payments from third parties need matching too — money coming *in* to the claims system | Kafka event (`recovery.received`) |
+| **bank-account-validation-service** | Flag cases where bank confirmation details differ from pre-validated account details | REST call for re-validation on mismatches |
+
+### Secondary — Other Claims Systems
+
+| Service | System | Why |
+|---|---|---|
+| **claims-reserve-calculator** | claims-assessment-system | When a payment is confirmed by the bank, the reserve should be released. When a payment fails, the reserve stays open. Your recon results drive reserve adjustments |
+| **claim-status-tracker** | claims-assessment-system | Payment confirmation/failure should update claim status (e.g., "settled" vs "payment pending") |
+
+### Cross-Domain — Via Published APIs Only
+
+Both domain handbooks **forbid direct database access** across domains. You must use published APIs.
+
+| Service / API | Domain | Why |
+|---|---|---|
+| **policy-query-api** | policy-administration | Verify policy coverage status when reconciling — is the policy still active? Was it cancelled mid-settlement? |
+| **billing-account-ledger-service** | billing-payments | Only relevant if a claim settlement triggers a premium adjustment (e.g., return premium on total loss). Access via the billing domain's APIs, not directly |
+
+### Not Needed Directly
+
+| Service | Why Skip It |
+|---|---|
+| **payment-gateway-service** | Handles *inbound* premium payments (cards, Open Banking). Your disbursements go out via BACS/SEPA/ACH through the disbursement service, not through this gateway |
+| **payment-reconciliation-service** (billing) | Different domain, different flow. Reconciles inbound premium receipts. No direct integration, but worth studying their patterns |
+| **fnol-submission-api** | Upstream intake — no relevance to payment reconciliation |
+
+---
+
+## Kafka Events You'll Likely Consume
+
+Per claims governance, all claim state transitions must emit Kafka events. Your service would subscribe to:
+
+| Event | Producer | Your Action |
+|---|---|---|
+| `payment.disbursed` | claims-payment-disbursement-service | Record expected outbound payment, start matching window |
+| `supplier.payment.batched` | supplier-payment-service | Same, for supplier payment batches |
+| `recovery.payment.received` | subrogation-recovery-service | Match inbound recovery against expected recovery |
+| `settlement.approved` | claims-settlement-service | Know the expected total so you can detect partial payments |
+
+## Events You'll Likely Produce
+
+| Event | Consumers | Meaning |
+|---|---|---|
+| `payment.confirmed` | claim-status-tracker, claims-reserve-calculator | Bank confirmed the payment landed |
+| `payment.failed` | claim-status-tracker, claims-settlement-service | Bank rejected or returned the payment |
+| `payment.unmatched` | finance ops queue | Bank file contains a credit/debit with no matching disbursement record |
+
+`★ Insight ─────────────────────────────────────`
+**The dependency graph tells you your service's role.** The existing claims-payment-system flows *downward*: settlement calculates → disbursement executes → supplier/subrogation handle specifics. But there's no *feedback loop* — nothing currently confirms that payments actually landed. Your service closes that loop by consuming bank confirmation files and feeding results back upstream to the reserve calculator and status tracker.
+
+**Watch the subrogation edge case.** Recovery payments are money flowing *into* the claims system from third parties — the opposite direction from settlements. The existing `payment-reconciliation-service` in billing-payments handles inbound premium flows, but recovery payments are *not premiums*. They're claim recoveries. Your service needs to reconcile both directions: outbound settlements *and* inbound recoveries. That's a scope distinction worth clarifying with claims-engineering early.
+
+**The `bank-account-validation-service` is Node.js** — the only non-Java component in the system. It was likely granted an exception for its I/O-bound Open Banking API calls (claims governance allows Node.js for "I/O-bound, non-transactional workloads"). Your service will call it via REST, so the runtime difference is transparent.
+`─────────────────────────────────────────────────`
+
+Want me to check if there are scaffolder templates available for creating a new Quarkus service in the claims domain?

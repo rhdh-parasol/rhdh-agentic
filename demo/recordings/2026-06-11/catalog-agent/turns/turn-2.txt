@@ -1,0 +1,71 @@
+Both handbooks have detailed governance. Here's what applies to your claims payment reconciliation service — and there's an interesting tension between the two domains.
+
+---
+
+## Claims Domain — Your Home Domain
+
+### Required Stack
+| Technology | Requirement |
+|---|---|
+| **Java (Quarkus)** | **Required** for all transactional services. Python only allowed for ML/analytical workloads |
+| **REST + OpenAPI 3.0.3** | **Required** for all service interfaces |
+| **AMQ Streams (Kafka)** | **Preferred** for async domain events. All claim state transitions must emit Kafka events |
+| **OpenShift 4** | **Required** runtime |
+| **Keycloak** | **Required** auth (OIDC/OAuth2) |
+| **Red Hat ACS** | **Required** container scanning before prod |
+| **Instana** | **Required** APM. Must meet **p99 < 500ms** latency SLO |
+
+### Mandatory Governance
+- Register with GDPR Compliance System if processing PII (claimant names, addresses)
+- DSAR support required for PII-processing services
+- No SOAP — REST only for new services
+- No unmasked PII in logs
+- No direct DB access from outside the claims domain — use published APIs
+
+---
+
+## Billing-Payments Domain — The Reconciliation Neighbor
+
+Their rules are **stricter** because of PCI-DSS Level 1:
+
+| Technology | Requirement |
+|---|---|
+| **IBM MQ** | **Required** for all payment transaction messaging. Kafka explicitly **not approved** for payment-critical paths |
+| **Guardium** | **Required** DB monitoring for PCI-DSS scope |
+| **PCI-hardened base images** | Required in Helm charts |
+| Cardholder data | **Must be tokenized**, never logged/cached in plaintext |
+| Double-entry accounting | Required for anything tagged `ledger` |
+
+### Key Exception (Directly Relevant to You)
+> **"Reconciliation batch jobs: Python-based reconciliation jobs that do not handle cardholder data may use relaxed messaging requirements (AMQ Streams instead of IBM MQ) with approval."**
+
+---
+
+## ⚠️ The Governance Tension
+
+Your service sits at a boundary. Here's what matters:
+
+**If your service lives in the claims domain** (reconciling outbound settlement disbursements):
+- You follow **claims governance** → Quarkus, Kafka, Instana, ACS
+- You're reconciling bank *confirmations* of payments you sent, not cardholder data
+- IBM MQ and PCI-DSS likely **don't apply** because you're matching disbursement records, not processing card payments
+
+**But** — the existing `payment-reconciliation-service` in billing-payments uses IBM MQ and Python for its reconciliation batch jobs. If your service needs to consume data from or interact with the billing-payments domain (e.g., cross-referencing premium refunds against claim settlements), you'd need to go through their **published APIs** — direct DB access across domains is forbidden in both handbooks.
+
+**Recommended stack for your service:**
+
+| Choice | Rationale |
+|---|---|
+| **Java + Quarkus** | Claims domain mandate. No exception needed |
+| **Kafka** | Claims events (settlement approved, payment confirmed). Not payment-critical path, so IBM MQ not required |
+| **REST + OpenAPI 3.0.3** | Both domains require it |
+| **PostgreSQL** | Claims domain standard (Db2 also approved). Needs no special approval |
+| **Instana** | Required. Must hit p99 < 500ms |
+
+`★ Insight ─────────────────────────────────────`
+**IBM MQ vs Kafka is the sharpest decision here.** Billing-payments mandates IBM MQ for payment flows because of its exactly-once delivery guarantee — critical when you're *moving money*. But your service isn't moving money; it's *verifying that money moved correctly*. That's a read-after-the-fact reconciliation, not a transactional payment path. Kafka's at-least-once semantics are fine for reconciliation events (duplicate confirmations are idempotent to match). If you later need to trigger re-disbursements from unmatched records, that's when you'd need IBM MQ — and that's when you'd need claims-engineering lead + platform-engineering approval.
+
+**Talk to billing-payments-engineering about their reconciliation patterns.** Their existing `payment-reconciliation-service` got a Python exception specifically for batch reconciliation. Even though you'll use Java (claims rules), their file-parsing and exception-queuing patterns are directly reusable.
+`─────────────────────────────────────────────────`
+
+Want me to look at what APIs and components exist in the `claims-payment-system` that your service would need to integrate with?

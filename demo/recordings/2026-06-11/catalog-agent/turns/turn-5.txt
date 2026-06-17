@@ -1,0 +1,83 @@
+## Technology Decision Summary
+
+### Service: `claims-payment-reconciliation-service`
+
+| | |
+|---|---|
+| **Domain** | `claims` |
+| **System** | `claims-payment-system` |
+| **Owner** | `group:default/claims-engineering` |
+| **Template** | `parasol-quarkus-service` |
+
+---
+
+### Stack Decisions
+
+| Decision | Choice | Catalog Source | Governance Rule |
+|---|---|---|---|
+| **Language / Framework** | Java + Quarkus | Claims Domain Handbook → Approved Stack Matrix | "All new claims services MUST be written in Java using Quarkus, unless the workload is analytical/ML" |
+| **API Style** | REST + OpenAPI 3.0.3 | Claims Domain Handbook → Mandatory | "All services MUST expose REST APIs documented with OpenAPI 3.0.3" |
+| **Async Messaging** | AMQ Streams (Kafka) | Claims Domain Handbook → Approved Stack Matrix (status: Preferred) | "Use for all asynchronous domain events." Claim state transitions must emit Kafka events |
+| **Container Platform** | OpenShift 4 | Claims Domain Handbook + Billing-Payments Handbook (both Required) | "All claims services run on OpenShift" |
+| **Auth** | Keycloak (OIDC/OAuth2) | Claims Domain Handbook → Approved Stack Matrix (Required) | "Authentication for adjusters, claimants, and SIU investigators" |
+| **Container Security** | Red Hat ACS | Claims Domain Handbook → Approved Stack Matrix (Required) | "Mandatory for all images before production deployment" |
+| **APM / Tracing** | Instana | Claims Domain Handbook → Approved Stack Matrix (Required) | "Claims services must meet p99 < 500ms latency SLO" |
+| **Database** | PostgreSQL | Claims Domain Handbook → Requires Approval section (PostgreSQL/Db2 is the domain standard) | No approval needed for PostgreSQL; other DB technologies require approval |
+| **ML/AI** | None | N/A | Not an ML workload — no watsonx.ai/governance required |
+
+---
+
+### Cross-Domain Conflicts
+
+| Conflict | Claims Domain Says | Billing-Payments Domain Says | Resolution |
+|---|---|---|---|
+| **Kafka vs IBM MQ** | Kafka is **Preferred** for all async domain events | IBM MQ is **Required** for payment transaction messaging. Kafka is "not approved for payment-critical paths due to at-least-once semantics" | **Use Kafka.** Your service reconciles *after the fact* — it's not on the payment-critical path. Billing-payments' IBM MQ mandate applies to transactional payment flows (money movement), not to confirmation matching. If your service later needs to *trigger re-disbursements*, that specific flow would need IBM MQ and approval from claims-engineering lead + platform-engineering |
+| **Python allowance** | Python allowed only for "analytical or ML components" | Python "restricted to reconciliation batch jobs" — the existing `payment-reconciliation-service` runs Python batch recon | **Use Java.** The Python exception in billing-payments was granted specifically for their domain. Claims governance has no such exception for reconciliation workloads. You'd need a formal deviation (ADR + tech lead + platform approval) to use Python, and the justification would be weak since Quarkus handles batch processing fine |
+| **PCI-DSS scope** | Not mentioned for claims-payment-system | PCI-DSS Level 1 mandatory for `payment-processing-system` components. Guardium required. PCI-hardened base images required | **Not in PCI scope.** Your service processes bank confirmation files (account numbers, sort codes, amounts) — not cardholder data (PAN, CVV, expiry). However, if bank confirmations contain card-last-four or tokenized PAN for card-paid claims, consult `parasol-security-engineering` to confirm scope |
+| **Database monitoring** | No Guardium requirement | Guardium required for all datastores in PCI-DSS scope | **Guardium not required** — follows from PCI scope resolution above. Standard Instana DB monitoring is sufficient |
+| **Data residency** | No explicit requirement | "Storing any data outside the EU" requires approval | **Confirm with claims-engineering.** Bank confirmation files likely contain EU personal data (claimant names, IBANs). Even though claims governance doesn't explicitly mandate EU residency, GDPR registration is mandatory for PII-processing services. Ensure your PostgreSQL instance is EU-region |
+| **Double-entry accounting** | Not required | Required for components tagged `ledger` | **Not required.** Your service is a reconciliation engine, not a ledger. The `billing-account-ledger-service` is the ledger. You match records and produce events — you don't maintain financial balances |
+| **Direct DB access** | "Direct database access from services outside the claims domain" is **Forbidden** | Same principle — cross-domain access via published APIs only | **No conflict.** You access billing-payments data (if needed) via `policy-query-api` or billing APIs. Within the claims domain, direct service-to-service REST calls are standard |
+
+---
+
+### Compliance Obligations
+
+| Requirement | Source | Action Needed |
+|---|---|---|
+| **GDPR registration** | Claims Handbook → Mandatory | Register with GDPR Compliance System — your service processes claimant PII (names, bank details) |
+| **DSAR support** | Claims Handbook → Mandatory | Implement data subject access request support for stored claimant payment records |
+| **Kafka event emission** | Claims Handbook → Mandatory | All claim state transitions (payment confirmed/failed/unmatched) must emit Kafka events |
+| **No PII in logs** | Claims Handbook → Forbidden | Mask claimant names, IBANs, account numbers in application logs |
+| **ACS enforcement** | Claims Handbook → Mandatory | No container may run without ACS runtime policies active |
+| **Instana p99 SLO** | Claims Handbook → Mandatory | Customer-facing endpoints must hit p99 < 500ms |
+
+---
+
+### Dependencies (for `catalog-info.yaml`)
+
+| Dependency | Kind | Rationale |
+|---|---|---|
+| `component:default/claims-payment-disbursement-service` | `dependsOn` | Source of outbound payment records (BACS/SEPA/ACH) |
+| `component:default/claims-settlement-service` | `dependsOn` | Expected settlement amounts for matching |
+| `component:default/supplier-payment-service` | `dependsOn` | Supplier payment batches to reconcile |
+| `component:default/bank-account-validation-service` | `dependsOn` | Re-validate on bank detail mismatches |
+
+---
+
+### Items Requiring Human Decision
+
+| Item | Who to Ask | Why |
+|---|---|---|
+| Kafka vs IBM MQ for re-disbursement triggers | Claims-engineering tech lead + platform-engineering | If reconciliation failures need to auto-trigger payment retries, that's a payment-critical path — IBM MQ territory |
+| PCI-DSS scope confirmation | `parasol-security-engineering` | Bank confirmation files *might* contain tokenized card references |
+| EU data residency | Claims-engineering tech lead | Bank confirmation files contain IBAN/sort code — likely in scope for EU residency even under claims governance |
+| Python exception request | Claims-engineering tech lead + platform-engineering | Only if you want to align with billing-payments' recon patterns. Weak case given Quarkus can handle batch processing |
+
+`★ Insight ─────────────────────────────────────`
+**The catalog did the heavy lifting here.** Every technology choice traces back to either a TechDocs handbook (`domain:default/claims`, `domain:default/billing-payments`) or a catalog entity relationship (`claims-payment-system` component graph). Without the catalog, you'd be making these decisions in a vacuum or learning about IBM MQ vs Kafka conflicts after you've already built the wrong thing.
+
+**The cross-domain conflicts are the real value of this analysis.** A developer looking only at the claims handbook would never know that the billing-payments domain mandates IBM MQ for payment flows. The conflict only surfaces when you look at *both* handbooks side-by-side and realize your service sits at the boundary. This is exactly the kind of architectural landmine that a software catalog is designed to expose before it becomes a production incident.
+
+**Three of the four "human decision" items are about scope boundaries, not technology.** The technology choices are clear from governance. What's ambiguous is *which governance applies* — and that's a people decision, not a code decision. Get those clarified before writing a line of code.
+`─────────────────────────────────────────────────`
