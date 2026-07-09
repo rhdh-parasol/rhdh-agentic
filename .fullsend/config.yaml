@@ -11,3 +11,9 @@ roles:
     - fix
     - retro
     - prioritize
+agents:
+    - source: harness/code.yaml
+    - source: harness/debug.yaml
+    - source: harness/review.yaml
+allowed_remote_resources:
+    - https://raw.githubusercontent.com/fullsend-ai/fullsend/
