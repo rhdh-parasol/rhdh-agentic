@@ -1,0 +1,31 @@
+{
+  "name": "@internal/plugin-agent-common",
+  "version": "0.1.0",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rhdh-parasol/rhdh-agentic",
+    "directory": "workspaces/backstage-agent/plugins/agent-common"
+  },
+  "backstage": {
+    "role": "common-library",
+    "pluginId": "agent",
+    "pluginPackages": [
+      "@internal/plugin-agent-common"
+    ]
+  },
+  "scripts": {
+    "build": "backstage-cli package build",
+    "lint": "backstage-cli package lint",
+    "test": "backstage-cli package test",
+    "clean": "backstage-cli package clean"
+  },
+  "devDependencies": {
+    "@backstage/cli": "^0.36.0"
+  },
+  "files": [
+    "dist"
+  ]
+}

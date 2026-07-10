@@ -4,3 +4,7 @@ image: ghcr.io/redhat-developer/rhdh-fullsend-code:latest
 host_files:
     - src: env/rhdh-toolchain.env
       dest: /sandbox/workspace/.env.d/rhdh-toolchain.env
+    - src: env/yarn-proxy.env
+      dest: /sandbox/workspace/.env.d/yarn-proxy.env
+skills:
+    - skills/rhdh-workspace

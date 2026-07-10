@@ -20,8 +20,13 @@ venv/
 # Node
 node_modules/
 
+# Yarn Berry — commit the binary, ignore everything else
+.yarn/*
+!.yarn/releases
+
 # Build
 dist/
+dist-types/
 build/
 
 # Testing

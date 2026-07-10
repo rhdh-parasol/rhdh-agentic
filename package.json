@@ -1,0 +1,15 @@
+{
+  "name": "@internal/rhdh-agentic",
+  "private": true,
+  "version": "0.0.0",
+  "repository": "git@github.com:rhdh-parasol/rhdh-agentic.git",
+  "engines": {
+    "node": "22 || 24"
+  },
+  "scripts": {
+    "prettier:check": "prettier --check .",
+    "prettier:fix": "prettier --write ."
+  },
+  "type": "module",
+  "packageManager": "yarn@4.12.0"
+}

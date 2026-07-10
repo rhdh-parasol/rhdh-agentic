@@ -1,0 +1,34 @@
+{
+  "name": "backend",
+  "version": "0.0.0",
+  "main": "dist/index.cjs.js",
+  "types": "src/index.ts",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rhdh-parasol/rhdh-agentic",
+    "directory": "workspaces/backstage-agent/packages/backend"
+  },
+  "backstage": {
+    "role": "backend"
+  },
+  "scripts": {
+    "start": "backstage-cli package start",
+    "build": "backstage-cli package build",
+    "test": "backstage-cli package test",
+    "clean": "backstage-cli package clean"
+  },
+  "dependencies": {
+    "@backstage/backend-defaults": "^0.16.0",
+    "@backstage/plugin-auth-backend": "^0.27.3",
+    "@backstage/plugin-auth-backend-module-guest-provider": "^0.2.17",
+    "@backstage/plugin-catalog-backend": "^3.5.0",
+    "better-sqlite3": "^12.0.0"
+  },
+  "devDependencies": {
+    "@backstage/cli": "^0.36.0"
+  },
+  "files": [
+    "dist"
+  ]
+}
