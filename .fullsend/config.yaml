@@ -4,6 +4,11 @@
 # This file configures fullsend for per-repo installation mode.
 # See ADR 0033 for details.
 version: "1"
+agents:
+    - name: code
+      source: harness/code.yaml
+    - name: fix
+      source: harness/fix.yaml
 roles:
     - triage
     - coder
