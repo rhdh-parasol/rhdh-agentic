@@ -156,6 +156,7 @@ tests on every verification pass. If secrets are detected — or if the helper
 script is missing — hard stop. Do not improvise a replacement or skip the scan.
 
 Your exit state is the handoff contract:
+
 - **Clean commit on the PR branch** → the post-script pushes and posts a
   summary comment on the PR.
 - **No commit** → the post-script reads your structured output and posts
