@@ -8,7 +8,7 @@
 
 agent: rhdh/agents/grillme.md
 image: ghcr.io/fullsend-ai/fullsend-code:latest
-policy: policies/base.yaml
+policy: rhdh/policies/code.yaml
 readonly_repo: true
 
 role: review
