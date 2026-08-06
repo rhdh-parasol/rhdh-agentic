@@ -12,6 +12,8 @@ agents:
       source: rhdh/harness/code.yaml
     - name: fix
       source: rhdh/harness/fix.yaml
+    - name: grillme
+      source: rhdh/harness/grillme.yaml
 roles:
     - triage
     - coder
