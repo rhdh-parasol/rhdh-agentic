@@ -54,6 +54,33 @@ fi
 
 log "Starting catalog-agent demo ($(date))"
 
+# ── Pre-warm TechDocs ───────────────────────────────────────────────
+# TechDocs local builder only generates docs on first request.
+# Hit the sync endpoint for key entities so content is ready before
+# the agent tries to read it via techdocs-mcp-extras.
+
+log "Pre-warming TechDocs"
+
+TECHDOCS_ENTITIES=(
+  "default/domain/claims"
+  "default/domain/billing-payments"
+  "default/domain/underwriting"
+  "default/domain/customer-portal"
+  "default/domain/data-analytics"
+  "default/domain/policy-administration"
+  "default/group/parasol-platform-engineering"
+  "default/system/fnol-system"
+  "default/system/data-lake-system"
+  "default/system/rating-engine-system"
+)
+
+RHDH_TOKEN="${RHDH_STATIC_TOKEN:-development}"
+for entity in "${TECHDOCS_ENTITIES[@]}"; do
+  status=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer ${RHDH_TOKEN}" \
+    "http://localhost:7007/api/techdocs/sync/${entity}")
+  printf '  %s → %s\n' "$entity" "$status"
+done
+
 # ── Turns ────────────────────────────────────────────────────────────
 
 run_turn 1 \
