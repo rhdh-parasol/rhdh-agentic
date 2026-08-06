@@ -1,0 +1,85 @@
+Here's the full picture of what governs your payment reconciliation service, synthesized from three sources: the Claims domain handbook, the Billing & Payments domain handbook, and Platform Engineering's org-wide standards.
+
+---
+
+## Your Service Must Follow: Claims Domain Rules
+
+Since your service lives in `claims-payment-system`, the **Claims handbook is primary**:
+
+### Technology Stack (Non-negotiable)
+
+| Requirement | What it means for you |
+|---|---|
+| **Java (Quarkus)** | Required for all transactional claims services. No Spring Boot, no Micronaut. |
+| **OpenShift 4** | Deploy via Parasol Helm charts. |
+| **REST + OpenAPI 3.0.3** | Your API must have an OpenAPI spec registered in Backstage. |
+| **AMQ Streams (Kafka)** | Emit events to the claims event topic for all claim state transitions (e.g., "payment reconciled", "payment failed"). |
+| **PostgreSQL or Db2** | Standard database stack. Anything else needs approval. |
+| **Keycloak** | OIDC/OAuth2 for auth. |
+| **Red Hat ACS** | Container security scanning mandatory before prod. |
+| **Instana** | APM + distributed tracing. Must meet **p99 < 500ms** latency SLO. |
+
+### Governance Constraints
+
+- **GDPR**: Your service will process claimant PII (names, bank details). You MUST register with the GDPR Compliance System and implement DSAR support.
+- **No SOAP**: All integrations must be REST.
+- **No unmasked PII in logs**: Tokenize or mask bank account numbers, claimant names, etc.
+- **No direct DB access from outside Claims domain**: Other domains must use your published APIs.
+
+---
+
+## Cross-Domain Concern: Billing & Payments Rules
+
+Your service will consume bank settlement files from the Billing & Payments domain. Their handbook has a critical rule that affects you:
+
+| Rule | Impact |
+|---|---|
+| **IBM MQ for payment-critical messaging** | If you receive payment confirmations from Billing's `payment-gateway-service`, the payment-critical path **must** use IBM MQ, not Kafka. Kafka is only allowed for non-payment-critical flows (and even then needs approval in their domain). |
+| **PCI-DSS scope** | If your service handles or even *passes through* cardholder data, it falls in PCI-DSS scope — requiring Guardium, PCI-hardened base images, and annual QSA audit. Recommendation: **don't touch card data**. Reconcile against tokenized payment references only. |
+| **EU data residency** | Payment data must stay in EU. |
+
+There's a helpful exception note: *"Reconciliation batch jobs that do not handle cardholder data may use relaxed messaging requirements (AMQ Streams instead of IBM MQ) with approval."* This is your escape hatch — if you reconcile against settlement references (not card numbers), you can stick with Kafka on the Claims side and avoid the full PCI-DSS burden.
+
+---
+
+## Org-Wide Standards (Platform Engineering)
+
+These apply to every service at Parasol:
+
+### API Conventions
+- **URL pattern**: `https://api-internal.parasol.com/<resource>/v<major>` (since this is internal)
+- **Versioning**: Major version in URL path (`/v1`)
+- **Operation IDs**: camelCase (`reconcilePayment`, `getReconciliationStatus`)
+- **Schema names**: PascalCase (`ReconciliationResult`, `PaymentMatch`)
+- **Enums**: UPPER_SNAKE_CASE (`MATCHED`, `UNMATCHED`, `PARTIAL_MATCH`, `FAILED`)
+- **Dates**: ISO 8601 with `format: date-time`
+
+### Observability (All three pillars mandatory)
+- **Metrics**: Expose `/metrics` in Prometheus format — RED metrics (`http_requests_total`, `http_request_duration_seconds`, `http_requests_in_flight`) plus business metrics (e.g., `claims_payments_reconciled_total`)
+- **Structured logging**: JSON with `timestamp`, `level`, `message`, `service`, `traceId`, `spanId`. Never log PII.
+- **Distributed tracing**: OpenTelemetry Java agent, propagate W3C Trace Context headers. Tail-based sampling at 10%, 100% for errors.
+- **SLOs**: >= 99.9% availability, p99 < 500ms, error rate < 0.1%
+- **Dashboards**: Grafana with 4-row layout (overview, downstream deps, infra, business metrics)
+
+### Security
+- **Service-to-service auth**: mTLS via Istio service mesh (SPIFFE identities). No shared secrets or API keys.
+- **RBAC**: Domain-scoped roles (`claims:reader`, `claims:writer`, `claims:admin`)
+- **Claims payments > threshold**: Require dual-approval (this is your upstream — the disbursement service handles it, but you need to respect the approval status)
+- **Encryption**: TLS 1.3 in transit, AES-256 at rest for Confidential/Restricted data
+- **Secrets**: HashiCorp Vault, no secrets in env vars or config files
+
+---
+
+## Summary: Your Checklist Before You Start
+
+1. **Quarkus** service, **OpenShift 4**, **PostgreSQL**
+2. **OpenAPI 3.0.3** spec following Parasol naming conventions
+3. **Kafka events** on the claims event topic for reconciliation outcomes
+4. **Avoid cardholder data** — reconcile on payment references/tokens only, to stay out of PCI-DSS scope
+5. **GDPR registration** since you'll handle claimant PII (bank account details)
+6. **OpenTelemetry + Instana + Prometheus metrics + structured JSON logging**
+7. **mTLS** for calls to `claims-payment-disbursement-service` and any Billing domain services
+8. **Grafana dashboard** in the standard 4-row layout
+9. If you need bank settlement files from Billing domain, clarify with `billing-payments-engineering` whether IBM MQ is required or if the reconciliation batch exception applies
+
+Want me to look at the specific APIs that the existing payment services expose, so you can plan your integration points?

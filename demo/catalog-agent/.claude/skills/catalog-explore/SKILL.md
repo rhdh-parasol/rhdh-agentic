@@ -24,26 +24,28 @@ Always include `--backendUrl http://localhost:7007` and redirect stderr to `/dev
 Filter and list catalog entities.
 
 Parameters:
-- `--query '{"fullTextFilterTerm":"<search>","filter":{"kind":"<Kind>"}}'` — filter by kind, text, or both
+- `--query '{"kind":"<Kind>"}'` — filter by kind (top-level keys, not nested under `filter`)
+- `--query '{"fullTextFilterTerm":"<search>","kind":"<Kind>"}'` — filter by kind and text
+- `--query '{"kind":"Component","spec.system":"<system-name>"}'` — filter by kind and spec fields
 - `--fields '["metadata.name","metadata.namespace","spec.owner","spec.type"]'` — select output fields (always use to keep output manageable)
 
 Examples:
 ```bash
 # List all domains
 NPM_CONFIG_LEGACY_PEER_DEPS=true npx @backstage/cli@0.36.2 actions execute catalog:query-catalog-entities \
-  --query '{"filter":{"kind":"Domain"}}' \
+  --query '{"kind":"Domain"}' \
   --fields '["metadata.name","metadata.description","spec.owner"]' \
   --backendUrl http://localhost:7007 2>/dev/null
 
 # List components in a specific system
 NPM_CONFIG_LEGACY_PEER_DEPS=true npx @backstage/cli@0.36.2 actions execute catalog:query-catalog-entities \
-  --query '{"filter":{"kind":"Component","spec.system":"my-system"}}' \
+  --query '{"kind":"Component","spec.system":"my-system"}' \
   --fields '["metadata.name","spec.type","spec.lifecycle","spec.owner"]' \
   --backendUrl http://localhost:7007 2>/dev/null
 
 # Search by text
 NPM_CONFIG_LEGACY_PEER_DEPS=true npx @backstage/cli@0.36.2 actions execute catalog:query-catalog-entities \
-  --query '{"fullTextFilterTerm":"payment","filter":{"kind":"Component"}}' \
+  --query '{"fullTextFilterTerm":"payment","kind":"Component"}' \
   --fields '["metadata.name","metadata.description","spec.system"]' \
   --backendUrl http://localhost:7007 2>/dev/null
 ```
@@ -67,12 +69,20 @@ NPM_CONFIG_LEGACY_PEER_DEPS=true npx @backstage/cli@0.36.2 actions execute catal
 Read TechDocs content for an entity (handbooks, ADRs, governance docs).
 
 Parameters:
-- `--entityRef <kind:namespace/name>` — full entity reference
+- `--entityRef <kind:namespace/name>` — full entity reference (required)
+- `--pagePath <path>` — path to a specific page within the docs (optional, defaults to `index.html`). Use for multi-page TechDocs sites (e.g., `api-conventions/`, `observability/`, `security/`).
 
-Example:
+Examples:
 ```bash
+# Fetch the index page
 NPM_CONFIG_LEGACY_PEER_DEPS=true npx @backstage/cli@0.36.2 actions execute techdocs-mcp-extras:retrieve-techdocs-content \
   --entityRef "domain:default/claims" \
+  --backendUrl http://localhost:7007 2>/dev/null
+
+# Fetch a specific sub-page
+NPM_CONFIG_LEGACY_PEER_DEPS=true npx @backstage/cli@0.36.2 actions execute techdocs-mcp-extras:retrieve-techdocs-content \
+  --entityRef "group:default/parasol-platform-engineering" \
+  --pagePath "api-conventions/" \
   --backendUrl http://localhost:7007 2>/dev/null
 ```
 
