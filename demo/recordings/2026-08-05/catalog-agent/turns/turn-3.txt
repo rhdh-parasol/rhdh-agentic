@@ -1,0 +1,121 @@
+Here's your complete integration map.
+
+---
+
+## Integration Architecture
+
+```
+                          ┌─────────────────────────────┐
+                          │   YOUR SERVICE              │
+                          │   claims-payment-            │
+                          │   reconciliation-service     │
+                          └──────────┬──────────────────┘
+                                     │
+            ┌────────────────────────┼────────────────────────┐
+            │                        │                        │
+     ── CONSUME ──           ── CONSUME ──            ── PRODUCE ──
+            │                        │                        │
+            ▼                        ▼                        ▼
+  ┌─────────────────┐    ┌──────────────────┐    ┌──────────────────┐
+  │  CLAIMS DOMAIN  │    │ BILLING DOMAIN   │    │ CLAIMS DOMAIN    │
+  │  (your team)    │    │ (cross-domain)   │    │ (your team)      │
+  └─────────────────┘    └──────────────────┘    └──────────────────┘
+```
+
+---
+
+## Primary Integrations (Must Have)
+
+### 1. `claims-payment-disbursement-service` — **your main data source**
+
+| Detail | Value |
+|---|---|
+| **Domain** | Claims (same team) |
+| **What you need** | Outbound payment instructions — payment ID, claim reference, amount, payment method (BACS/SEPA/ACH/cheque/wallet), beneficiary reference, timestamp |
+| **Integration pattern** | Kafka consumer on claims event topic (listen for `PAYMENT_DISPATCHED`, `PAYMENT_SUBMITTED` events) + REST call for payment details on demand |
+| **Dependency chain** | This service depends on `bank-account-validation-service` and is consumed by `claims-settlement-service` |
+| **Tags** | `claims`, `payment`, `finance`, `java`, `rest` |
+
+### 2. `supplier-payment-service` — **second payment source**
+
+| Detail | Value |
+|---|---|
+| **Domain** | Claims (same team) |
+| **What you need** | Supplier payment batches — payments to garages, contractors, medical providers, legal firms. Purchase order references, invoice numbers, batch IDs |
+| **Integration pattern** | Kafka consumer (supplier payment batch events) + REST for batch details |
+| **Why it matters** | Supplier payments are a separate outbound stream from claimant disbursements. Your reconciliation needs to cover both. |
+
+### 3. `claims-settlement-service` — **claim context**
+
+| Detail | Value |
+|---|---|
+| **Domain** | Claims (same team) |
+| **What you need** | Settlement details — net payable amount, deductibles applied, co-insurance splits, subrogation deductions. Needed to verify the *expected* payment amount matches what was actually disbursed and cleared. |
+| **Integration pattern** | REST call by claim reference |
+| **Dependency chain** | Depends on `bank-account-validation-service`, `claims-payment-disbursement-service`, and `claims-reserve-calculator` |
+
+### 4. `payment-gateway-service` — **bank settlement confirmations** (cross-domain)
+
+| Detail | Value |
+|---|---|
+| **Domain** | Billing & Payments (**different team**) |
+| **Owner** | `billing-payments-engineering` |
+| **What you need** | Bank settlement files / confirmations — BACS/SEPA clearing reports, ACH return files, payment status updates from acquirers. These tell you whether the money actually landed. |
+| **Integration pattern** | This is your key cross-domain integration. Discuss with `billing-payments-engineering` whether they expose settlement file data via an internal API or Kafka topic. Note: the existing `payment-reconciliation-service` in their domain already depends on this service — you may be able to consume the same data feed. |
+| **PCI-DSS caution** | This service handles card tokenisation and 3DS2. Do NOT request cardholder data — reconcile using `paymentId` and `paymentToken` references only. |
+
+---
+
+## Published APIs You'll Consume
+
+### 5. **Claims Status API** — `https://api.parasol.com/claims/status/v1`
+
+| Endpoint | Operation | Why you need it |
+|---|---|---|
+| `GET /claims/{claimReference}` | `getClaimStatus` | Get current claim status to validate reconciliation context (is the claim still OPEN? SETTLED? DENIED?) |
+| `GET /claims/{claimReference}/payments` | `getClaimPayments` | Get existing payment history for a claim — detect duplicates and verify your reconciliation matches the canonical payment record |
+
+### 6. **Audit Log API** — `https://api-internal.parasol.com/compliance/audit/v1`
+
+| Endpoint | Operation | Why you need it |
+|---|---|---|
+| `POST /events` | `submitAuditEvents` | **Mandatory**. You must submit audit events for every reconciliation action — matched payments, exceptions flagged, failed payment investigations. Required fields: `timestamp`, `eventType`, `actorId`, `subjectId`, `resourceType`, `outcome` (SUCCESS/FAILURE/DENIED) |
+
+This is an org-wide compliance requirement, not optional.
+
+---
+
+## Downstream Consumers (Services that need YOUR output)
+
+### 7. `subrogation-recovery-service`
+
+| Detail | Value |
+|---|---|
+| **Why** | If a claimant payment failed or was returned, subrogation recovery needs to know — the recovery accounting depends on confirmed settlement. Your reconciliation results feed into their recovery calculations. |
+| **Pattern** | Emit Kafka events: `PAYMENT_RECONCILED`, `PAYMENT_FAILED`, `PAYMENT_RETURNED` |
+
+### 8. `claim-status-tracker` (in `claims-assessment-system`)
+
+| Detail | Value |
+|---|---|
+| **Why** | When a payment is confirmed cleared, the claim milestone should update. When a payment fails, the claim status may need to revert. |
+| **Pattern** | Kafka events on the claims event topic trigger milestone updates |
+
+---
+
+## Summary: Integration Checklist
+
+| # | Service/API | Domain | Pattern | Priority |
+|---|---|---|---|---|
+| 1 | `claims-payment-disbursement-service` | Claims | Kafka + REST | Must have |
+| 2 | `supplier-payment-service` | Claims | Kafka + REST | Must have |
+| 3 | `claims-settlement-service` | Claims | REST | Must have |
+| 4 | `payment-gateway-service` | Billing & Payments | TBD (coordinate with team) | Must have |
+| 5 | Claims Status API (`/claims/status/v1`) | Claims | REST | Must have |
+| 6 | Audit Log API (`/compliance/audit/v1`) | Compliance | REST (POST) | Mandatory |
+| 7 | `subrogation-recovery-service` | Claims | Kafka (produce) | Should have |
+| 8 | `claim-status-tracker` | Claims | Kafka (produce) | Should have |
+
+The one conversation you need to have before writing code: reach out to `billing-payments-engineering` via `#billing-payments-engineering` on Slack to agree on how you'll receive bank settlement confirmations from their `payment-gateway-service`. That's your only cross-domain dependency and it'll shape whether you use IBM MQ (their standard) or qualify for the reconciliation batch exception to use Kafka.
+
+Want me to look at anything else — perhaps the GDPR registration process or the Backstage software templates available for scaffolding a new Quarkus service?

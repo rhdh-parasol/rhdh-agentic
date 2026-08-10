@@ -1,0 +1,54 @@
+Interesting finding. Here's what the catalog tells us:
+
+---
+
+## Parasol Insurance — Domain Map (14 domains)
+
+| Domain | Description |
+|---|---|
+| **Claims** | FNOL, assessment, fraud, payments, litigation, documents |
+| **Billing & Payments** | Premium collection, payment processing, refunds |
+| Policy Administration | Core policy lifecycle (inception through cancellation) |
+| Underwriting | Risk assessment, pricing, quote & bind |
+| Customer Portal | Self-service web/mobile, broker portal |
+| Personal Auto / Property | Motor and home/renters insurance |
+| Commercial Lines | Business insurance products |
+| Specialty Lines | Cyber, marine, aviation, trade credit |
+| Life & Annuities | Life insurance and pension products |
+| Reinsurance | Treaty and facultative reinsurance |
+| Compliance & Regulatory | Regulatory reporting, GDPR, sanctions screening |
+| Data & Analytics | Data platform, ML pipelines, BI |
+| Platform Engineering | IAM, API gateway, service mesh, IDP |
+
+## Your Claims Domain — 6 Systems
+
+1. **fnol-system** — First Notice of Loss intake and triage
+2. **claims-assessment-system** — Adjuster assignment, damage estimation, reserves
+3. **claims-fraud-detection-system** — ML-based fraud scoring and SIU referral
+4. **claims-payment-system** — Settlement disbursement (5 services already in prod)
+5. **claims-document-system** — Document capture and retrieval
+6. **claims-litigation-system** — Legal proceedings and subrogation recovery
+
+## The Key Finding
+
+There's already a **`payment-reconciliation-service`** — but it lives in the **Billing & Payments** domain under `payment-processing-system`. It reconciles *inbound premium payments* (bank files, card acquirers, direct debit) against the billing ledger.
+
+That service is **not** what you need. It handles the *premium* side. Your Claims team needs *claims settlement* reconciliation — confirming that outbound disbursements (BACS/SEPA/ACH, cheques, wallet transfers) from the `claims-payment-disbursement-service` actually landed in claimant and supplier bank accounts.
+
+## Where Your Service Fits
+
+**Domain:** Claims
+**System:** `claims-payment-system` — alongside the existing 5 services:
+- `claims-settlement-service` (calculates net payable)
+- `claims-payment-disbursement-service` (executes the payment)
+- `bank-account-validation-service` (validates accounts pre-payment)
+- `supplier-payment-service` (pays garages, contractors, legal firms)
+- `subrogation-recovery-service` (recovers from third parties)
+
+Your **claims payment reconciliation service** would slot in as the feedback loop: it confirms disbursements cleared, flags failed/returned payments, and reconciles bank settlement files against outbound payment instructions. It's the missing piece between "we sent the money" and "it arrived."
+
+You'll likely need to consume APIs from:
+- **`claims-payment-disbursement-service`** (your own domain — payment instructions and status)
+- **`payment-gateway-service`** (Billing & Payments domain — for bank settlement files/confirmations)
+
+Want me to dig into the APIs those services expose, or look at the Claims domain TechDocs for any governance or conventions you'd need to follow?

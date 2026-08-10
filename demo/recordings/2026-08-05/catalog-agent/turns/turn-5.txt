@@ -1,0 +1,150 @@
+I have everything from our exploration. Here's the full summary.
+
+---
+
+## Technology Decision Summary: `claims-payment-reconciliation-service`
+
+### Runtime & Framework
+
+| Decision | Choice | Source | Alternatives Considered | Ruling |
+|---|---|---|---|---|
+| **Language** | Java | Claims Domain Handbook — Approved Stack Matrix | Python (allowed only for ML/analytical), Node.js (allowed only for I/O-bound notifications) | **Mandatory.** "All new claims services MUST be written in Java using Quarkus" |
+| **Framework** | Quarkus | Claims Domain Handbook — Approved Stack Matrix; Billing Domain Handbook — Approved Stack Matrix | JBoss EAP (allowed for legacy migration only) | **Required for new services** in both domains |
+| **Scaffold template** | `parasol-quarkus-service` | Template entity `parasol-quarkus-service` (tagged `recommended`, owned by `parasol-platform-engineering`) | `parasol-nodejs-service`, `parasol-python-service` | Only valid template given the Java/Quarkus mandate |
+
+### Infrastructure & Deployment
+
+| Decision | Choice | Source | Notes |
+|---|---|---|---|
+| **Container platform** | OpenShift 4 | Claims Handbook ("Required, All"); Billing Handbook ("Required, All"); Org Security Standards | Universal — no exceptions across any domain |
+| **Container security** | Red Hat ACS | Claims Handbook ("Required"); Billing Handbook ("Required"); Org Security Standards | No critical/high CVEs, read-only root filesystem, non-root execution. Mandatory before prod deployment |
+| **Base images** | PCI-hardened Parasol Helm charts | Billing Handbook — Governance Rule #2 | Even though your service is in Claims, if it touches payment data from Billing domain, their hardened images may be required. **Clarify with `billing-payments-engineering`** |
+| **Secrets management** | HashiCorp Vault via OpenShift integration | Org Security Standards — Secrets Management | No secrets in env vars, config files, or images. DB credentials rotated every 90 days |
+
+### Database
+
+| Decision | Choice | Source | Conflict? |
+|---|---|---|---|
+| **Database** | PostgreSQL or Db2 | Claims Handbook — "Requires Approval" section (deviation from standard PostgreSQL/Db2 needs approval) | No conflict. Both domains use standard relational datastores. PostgreSQL is the pragmatic choice for a new service |
+| **Database monitoring** | Guardium — **only if in PCI-DSS scope** | Billing Handbook — Governance Rule #5 | If you store only tokenized payment references (no cardholder data), Guardium is not required. If any PCI data flows through, it becomes mandatory |
+
+### Messaging & Integration
+
+| Decision | Choice | Source | Conflict? |
+|---|---|---|---|
+| **Intra-domain events** | AMQ Streams (Kafka) | Claims Handbook — "Preferred" for async domain events; Governance Rule: "All claim state transitions MUST emit Kafka events" | **No conflict** within Claims domain |
+| **Cross-domain payment messaging** | IBM MQ **or** Kafka (exception path) | Billing Handbook — Governance Rule #3: "All payment transaction messaging MUST use IBM MQ"; Exception: "Reconciliation batch jobs that do not handle cardholder data may use relaxed messaging requirements (AMQ Streams instead of IBM MQ) with approval" | **CROSS-DOMAIN CONFLICT — see below** |
+
+#### Cross-Domain Conflict #1: Kafka vs IBM MQ
+
+| Dimension | Claims Domain Says | Billing Domain Says |
+|---|---|---|
+| **Preferred broker** | AMQ Streams (Kafka) — preferred for all async domain events | IBM MQ — required for payment-critical paths |
+| **Rationale** | Event-driven claim lifecycle | Guaranteed delivery; at-least-once Kafka semantics not approved for payment-critical flows |
+| **Resolution path** | Your service lives in Claims and emits to the claims event topic via Kafka. But if you *consume* payment settlement data from Billing's `payment-gateway-service`, their rules apply to that integration. The Billing handbook explicitly grants a reconciliation batch exception: if your service does not handle cardholder data, you can request approval to use Kafka instead of IBM MQ. |
+| **Action required** | Request exception from `billing-payments-engineering` lead + `parasol-platform-engineering`. Document in ADR. If denied, add IBM MQ client for the cross-domain feed only. |
+
+### API Design
+
+| Decision | Choice | Source |
+|---|---|---|
+| **Spec format** | OpenAPI 3.0.3 | Claims Handbook ("Required"); Org API Conventions |
+| **API visibility** | Internal (`api-internal.parasol.com`) | Org API Conventions — this is service-to-service, not customer-facing |
+| **URL pattern** | `https://api-internal.parasol.com/claims/reconciliation/v1` | Org API Conventions — internal URL pattern: `api-internal.parasol.com/<resource>/v<major>` |
+| **Versioning** | URL-path major version (`/v1`) | Org API Conventions |
+| **Operation IDs** | camelCase: `reconcilePayment`, `getReconciliationStatus`, `getReconciliationExceptions` | Org API Conventions — `<verb><Resource>` pattern |
+| **Schema names** | PascalCase: `ReconciliationResult`, `PaymentMatch`, `ReconciliationException` | Org API Conventions |
+| **Enums** | UPPER_SNAKE_CASE: `MATCHED`, `UNMATCHED`, `PARTIAL_MATCH`, `RETURNED`, `FAILED` | Org API Conventions |
+| **Dates** | ISO 8601, `format: date-time` | Org API Conventions |
+| **Response codes** | `200` (results), `202` (batch accepted), `400` (invalid), `404` (not found) | Org API Conventions |
+| **Classification tag** | `internal-api` | Org API Conventions — not exposed to customers/brokers |
+
+### Authentication & Authorization
+
+| Decision | Choice | Source |
+|---|---|---|
+| **Service-to-service auth** | mTLS via Istio service mesh (SPIFFE identities) | Org Security Standards — "No service-to-service calls should use shared secrets or API keys" |
+| **User-facing auth** | N/A (internal service, no direct user access) | — |
+| **RBAC roles** | `claims:reader` (query reconciliation results), `claims:writer` (trigger reconciliation), `claims:admin` (configure rules) | Org Security Standards — domain-scoped RBAC pattern |
+| **Keycloak** | Required if any API is exposed beyond service mesh | Claims Handbook ("Required"); Org Security Standards |
+
+### Observability
+
+| Decision | Choice | Source |
+|---|---|---|
+| **APM + Tracing** | Instana | Claims Handbook ("Required"); Org Observability — "All components MUST emit distributed traces to Instana" |
+| **Trace instrumentation** | OpenTelemetry Java agent (auto-instrumentation) | Org Observability — "Java services: use OpenTelemetry Java agent" |
+| **Trace propagation** | W3C Trace Context (`traceparent`, `tracestate`) | Org Observability — mandatory on all outbound HTTP and message publications |
+| **Sampling** | Tail-based: 10% normal, 100% errors and high-latency (> p99) | Org Observability |
+| **Metrics** | Prometheus exposition format on `/metrics` | Org Observability — RED metrics required |
+| **Business metrics** | `claims_payments_reconciled_total`, `claims_reconciliation_exceptions_total`, `claims_reconciliation_duration_seconds` | Org Observability — "domain-specific business metrics are encouraged, use domain name as prefix" |
+| **Logging** | Structured JSON: `timestamp`, `level`, `message`, `service`, `traceId`, `spanId` | Org Observability |
+| **PII in logs** | Forbidden — mask/tokenize bank account numbers, claimant names | Claims Handbook ("Forbidden: storing unmasked PII in application logs"); Org Observability; Org Security |
+| **Dashboard** | Grafana, 4-row layout (overview, downstream, infra, business) | Org Observability |
+
+### SLOs
+
+| SLO | Target | Source |
+|---|---|---|
+| **Availability** | >= 99.9% (30-day rolling) | Org Observability |
+| **Latency (p99)** | < 500ms | Claims Handbook ("customer-facing"); Org Observability — "Claims, Policy, Billing: p99 < 500ms" |
+| **Error rate** | < 0.1% of requests (30-day rolling) | Org Observability |
+
+### Compliance & Data Protection
+
+| Decision | Choice | Source | Notes |
+|---|---|---|---|
+| **GDPR registration** | Required — register with `gdpr-compliance-system` | Claims Handbook — Mandatory rule: "All services processing PII MUST register with the GDPR Compliance System" | You handle claimant names, bank details |
+| **DSAR support** | Required — implement via Privacy DSR API (`/privacy/dsr/v1`) | Org Security — PII Handling; `data-subject-rights-api` entity | Data subject access/erasure requests |
+| **Audit logging** | Required — POST to Audit Log API (`/compliance/audit/v1`) | Org Security — "All Parasol systems must submit security and data access events"; `audit-log-api` entity | Every reconciliation action needs an audit event |
+| **Data classification** | **Confidential** (claim records, personal data) | Org Security — Data Classification table | Requires encryption at rest + in transit, RBAC, GDPR data subject rights |
+| **Encryption in transit** | TLS 1.3 minimum; mTLS for service-to-service | Org Security |
+| **Encryption at rest** | AES-256 | Org Security — required for Confidential data |
+| **Data residency** | EU only | Billing Handbook — "Storing any data outside the EU" requires approval | Applies if you handle any payment data originating from Billing domain |
+
+### PCI-DSS Scope
+
+| Decision | Choice | Source | Notes |
+|---|---|---|---|
+| **PCI-DSS** | **Avoid scope** — reconcile on tokenized payment references only | Billing Handbook — "Components tagged `pci-dss` MUST NOT log, cache, or persist cardholder data (PAN, CVV, expiry) in plaintext" | If you never touch cardholder data, you stay out of PCI-DSS scope and avoid Guardium, PCI-hardened images, and annual QSA audit |
+
+#### Cross-Domain Conflict #2: PCI-DSS Scope Boundary
+
+| Dimension | Risk | Mitigation |
+|---|---|---|
+| **Data from `payment-gateway-service`** | This service handles card tokenisation, 3DS2, Worldpay/Stripe integration. Any data feed from it *could* include cardholder data. | Explicitly request only `paymentId`, `paymentToken`, `status`, `amount`, `settlementDate` — never PAN, CVV, or expiry. Document this boundary in your OpenAPI spec and ADR. |
+| **If you accidentally enter PCI scope** | Triggers: Guardium database monitoring, PCI-hardened base images, annual on-site QSA audit, quarterly vulnerability scans, Billing domain exception process | This is expensive and slow. Design the integration contract to exclude cardholder fields from day one. |
+
+---
+
+## Cross-Domain Coordination Required
+
+| # | Topic | Teams Involved | Channel | Resolution Needed |
+|---|---|---|---|---|
+| 1 | **Kafka vs IBM MQ** for settlement file consumption | Claims Engineering + Billing & Payments Engineering + Platform Engineering | `#billing-payments-engineering` Slack | Can you qualify for the reconciliation batch exception? If yes, document in ADR. If no, add IBM MQ client. |
+| 2 | **Settlement data contract** — which fields from `payment-gateway-service` | Claims Engineering + Billing & Payments Engineering | `#billing-payments-engineering` Slack | Agree on an internal API or shared topic. Explicitly exclude cardholder data fields to stay out of PCI-DSS scope. |
+| 3 | **PCI-DSS boundary** sign-off | Claims Engineering + Billing & Payments Engineering + `parasol-security-engineering` | PCI QSA review (if needed) | Get written confirmation that your service is out of PCI scope given the data contract. |
+
+---
+
+## Sources Consulted
+
+| Source | Catalog Entity | Type |
+|---|---|---|
+| Claims Domain Handbook | `domain:default/claims` | TechDocs |
+| Billing & Payments Domain Handbook | `domain:default/billing-payments` | TechDocs |
+| Parasol Engineering Standards — API Conventions | `group:default/parasol-platform-engineering` | TechDocs (`api-conventions/`) |
+| Parasol Engineering Standards — Observability | `group:default/parasol-platform-engineering` | TechDocs (`observability/`) |
+| Parasol Engineering Standards — Security & Auth | `group:default/parasol-platform-engineering` | TechDocs (`security/`) |
+| Claims Status API | `api:default/claims-status-api` | API (OpenAPI 3.0.3) |
+| Audit Log API | `api:default/audit-log-api` | API (OpenAPI 3.0.3) |
+| Premium Payment API | `api:default/premium-payment-api` | API (OpenAPI 3.0.3) |
+| `claims-payment-disbursement-service` | `component:default/claims-payment-disbursement-service` | Component |
+| `claims-settlement-service` | `component:default/claims-settlement-service` | Component |
+| `supplier-payment-service` | `component:default/supplier-payment-service` | Component |
+| `subrogation-recovery-service` | `component:default/subrogation-recovery-service` | Component |
+| `payment-gateway-service` | `component:default/payment-gateway-service` | Component |
+| `payment-reconciliation-service` (Billing) | `component:default/payment-reconciliation-service` | Component |
+| Parasol Quarkus Service Template | `template:default/parasol-quarkus-service` | Template |
+
+Every technology choice traces back to a specific catalog entity. The two cross-domain conflicts (Kafka vs IBM MQ, PCI-DSS scope boundary) both require coordination with `billing-payments-engineering` before you start building.

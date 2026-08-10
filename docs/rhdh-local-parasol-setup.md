@@ -16,6 +16,16 @@ A dedicated RHDH local instance wired to the [rhdh-parasol](https://github.com/r
 - Node.js 18+
 - `gh` CLI authenticated
 - Owner/admin access to the `rhdh-parasol` GitHub org
+- **A fork of `rhdh-parasol/rhdh-agentic`** under your GitHub account
+
+> [!IMPORTANT]
+> RHDH loads the Parasol catalog from GitHub via a `GITHUB_TOKEN`. The GitHub
+> App is scoped to the `rhdh-parasol` org, so it cannot read the catalog from
+> `rhdh-parasol/rhdh-agentic`. Your `GITHUB_TOKEN` (a personal access
+> token) must have read access to whichever repo hosts the catalog. The
+> simplest path: fork `rhdh-parasol/rhdh-agentic` to your own account and
+> use a token that can read your repos. The setup script will ask for your
+> GitHub username and configure the catalog URL accordingly.
 
 ## Quick Start (GitHub App already exists)
 
@@ -203,6 +213,8 @@ plugins:
   # Do NOT add it as a dynamic plugin — causes "already registered" conflict
 
   - package: ./dynamic-plugins/dist/backstage-plugin-scaffolder-backend-module-github-dynamic
+    disabled: false
+  - package: "oci://ghcr.io/redhat-developer/rhdh-plugin-export-overlays/red-hat-developer-hub-backstage-plugin-techdocs-mcp-extras:next__0.2.3"
     disabled: false
   - package: "oci://ghcr.io/redhat-developer/rhdh-plugin-export-overlays/backstage-plugin-auth:bs_1.49.4__0.1.6"
     disabled: false

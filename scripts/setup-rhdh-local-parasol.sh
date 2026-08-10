@@ -17,7 +17,23 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 AGENTIC_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 TARGET="${1:-$(cd "$AGENTIC_DIR/.." && pwd)/rhdh-local-parasol}"
 
+# The catalog URL must point to a repo the GITHUB_TOKEN can read.
+# If you forked rhdh-agentic, use your fork's owner here.
+if [ -z "${RHDH_CATALOG_OWNER:-}" ]; then
+  printf '\n'
+  printf '    The Parasol catalog is loaded from a GitHub repo.\n'
+  printf '    Your GITHUB_TOKEN must have read access to this repo.\n'
+  printf '\n'
+  printf '    If you forked rhdh-parasol/rhdh-agentic, enter your\n'
+  printf '    GitHub username. Otherwise, press Enter to use the upstream, assuming your token has read access to rhdh-parasol/rhdh-agentic.\n'
+  printf '\n'
+  read -rp '    GitHub owner [redhat-developer]: ' RHDH_CATALOG_OWNER
+  RHDH_CATALOG_OWNER="${RHDH_CATALOG_OWNER:-redhat-developer}"
+fi
+CATALOG_URL="https://github.com/${RHDH_CATALOG_OWNER}/rhdh-agentic/blob/main/catalog/parasol-catalog-index.yaml"
+
 echo "==> Setting up rhdh-local-parasol at: $TARGET"
+echo "    Catalog source: ${RHDH_CATALOG_OWNER}/rhdh-agentic"
 
 # Step 1: Clone if not already present
 if [ -d "$TARGET/.git" ]; then
@@ -104,7 +120,7 @@ fi
 if [ -f configs/app-config/app-config.local.yaml ]; then
   echo "    app-config.local.yaml already exists, skipping."
 else
-  cat > configs/app-config/app-config.local.yaml << 'YAMLEOF'
+  cat > configs/app-config/app-config.local.yaml << YAMLEOF
 # rhdh-local-parasol app config overlay
 # Configures: GitHub auth, backstage-cli OAuth2, Parasol catalog, GitHub integration
 
@@ -115,8 +131,8 @@ auth:
       dangerouslyAllowOutsideDevelopment: false
     github:
       development:
-        clientId: ${AUTH_GITHUB_CLIENT_ID}
-        clientSecret: ${AUTH_GITHUB_CLIENT_SECRET}
+        clientId: \${AUTH_GITHUB_CLIENT_ID}
+        clientSecret: \${AUTH_GITHUB_CLIENT_SECRET}
         signIn:
           resolvers:
             - resolver: usernameMatchingUserEntityName
@@ -132,9 +148,9 @@ auth:
 integrations:
   github:
     - host: github.com
-      token: ${GITHUB_TOKEN}
+      token: \${GITHUB_TOKEN}
       apps:
-        - $include: ../github-app-credentials.yaml
+        - \$include: ../github-app-credentials.yaml
     # Parasol catalog entities reference this fictional host
     - host: github.parasol.com
       token: placeholder
@@ -146,7 +162,7 @@ backend:
     externalAccess:
       - type: static
         options:
-          token: ${RHDH_STATIC_TOKEN}
+          token: \${RHDH_STATIC_TOKEN}
           subject: external-caller
   reading:
     allow:
@@ -165,7 +181,7 @@ catalog:
 
     # Parasol Insurance catalog (271 entities + TechDocs + Templates)
     - type: url
-      target: https://github.com/rhdh-parasol/rhdh-agentic/blob/main/catalog/parasol-catalog-index.yaml
+      target: ${CATALOG_URL}
       rules:
         - allow: [Location, Component, API, Domain, Group, System, Template]
 YAMLEOF
@@ -187,6 +203,10 @@ plugins:
 
   # Scaffolder GitHub module — creates repos on rhdh-parasol org
   - package: ./dynamic-plugins/dist/backstage-plugin-scaffolder-backend-module-github-dynamic
+    disabled: false
+
+  # TechDocs MCP Extras — programmatic TechDocs access for AI agents
+  - package: "oci://ghcr.io/redhat-developer/rhdh-plugin-export-overlays/red-hat-developer-hub-backstage-plugin-techdocs-mcp-extras:next__0.2.3"
     disabled: false
 
   # Auth frontend plugin — serves OAuth2 consent page for backstage-cli auth login

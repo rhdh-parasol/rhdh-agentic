@@ -1,0 +1,44 @@
+Here's the template and exactly how you'd fill it in.
+
+---
+
+## Template: `parasol-quarkus-service`
+
+Tagged `recommended` by Platform Engineering. Produces a Maven project with REST endpoints, health checks, Prometheus metrics, and a `catalog-info.yaml` ready for Backstage registration.
+
+### Step 1: Service Information
+
+| Parameter | Required | Type | Your Value |
+|---|---|---|---|
+| **`name`** | Yes | string (kebab-case, `^[a-z][a-z0-9-]*$`) | `claims-payment-reconciliation-service` |
+| **`description`** | Yes | string | *"Reconciles outbound claims disbursements and supplier payments against bank settlement confirmations. Identifies cleared, failed, and returned payments and emits reconciliation events to the claims event topic."* |
+| **`owner`** | Yes | Entity picker (Group) | `group:default/claims-engineering` |
+| **`system`** | Yes | Entity picker (System) | `system:default/claims-payment-system` |
+
+### Step 2: Java Configuration
+
+| Parameter | Required | Default | Your Value |
+|---|---|---|---|
+| **`groupId`** | Yes | `com.parasol` | `com.parasol.claims` |
+| **`artifactId`** | Yes | *(none)* | `claims-payment-reconciliation-service` |
+| **`javaPackageName`** | Yes | `com.parasol` | `com.parasol.claims.reconciliation` |
+| **`port`** | No | `8080` | `8080` (default is fine) |
+
+### What it generates
+
+The template runs two steps:
+1. **Fetch Service Skeleton** — scaffolds the Quarkus Maven project with your package name, REST endpoint stubs, health checks, and metrics
+2. **Fetch Catalog Info** — generates a `catalog-info.yaml` that registers the component in Backstage with your owner, system, and `java` stack tag
+
+### What it does NOT generate (you'll add post-scaffold)
+
+Based on the governance rules we found, you'll need to add these yourself after scaffolding:
+
+- **Kafka producer/consumer config** — for claims event topic integration (AMQ Streams)
+- **OpenAPI 3.0.3 spec** — your reconciliation API contract
+- **OpenTelemetry Java agent** — for distributed tracing to Instana
+- **GDPR registration** — register with `gdpr-compliance-system` since you handle claimant PII
+- **Audit log integration** — POST events to `https://api-internal.parasol.com/compliance/audit/v1`
+- **IBM MQ client** — if the cross-domain integration with `payment-gateway-service` requires guaranteed delivery (pending your conversation with `billing-payments-engineering`)
+
+You can scaffold this from the Backstage UI at `http://localhost:7007/create` — the template will show up with the entity pickers for owner and system. Want me to look into anything else before you kick it off?
