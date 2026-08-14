@@ -26,7 +26,14 @@ fi
 echo "::add-mask::${_TOKEN}"
 export GH_TOKEN="${_TOKEN}"
 
+# Derive ISSUE_NUMBER from GITHUB_ISSUE_URL when not set directly.
+# The pre-script writes to GITHUB_ENV, but the harness runner executes
+# pre-script → sandbox → post-script within a single GHA step, so
+# GITHUB_ENV changes don't propagate.
 ISSUE_NUMBER="${ISSUE_NUMBER:-${PR_NUMBER:-}}"
+if [[ -z "${ISSUE_NUMBER}" && -n "${GITHUB_ISSUE_URL:-}" ]]; then
+  ISSUE_NUMBER="$(basename "${GITHUB_ISSUE_URL}")"
+fi
 if [[ ! "${ISSUE_NUMBER}" =~ ^[0-9]+$ ]]; then
   echo "::error::ISSUE_NUMBER/PR_NUMBER must be numeric, got: '${ISSUE_NUMBER:-}'"
   exit 1

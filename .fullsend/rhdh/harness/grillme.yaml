@@ -29,7 +29,6 @@ host_files:
     expand: true
   - src: rhdh/env/grillme.env
     dest: /sandbox/workspace/.env.d/grillme.env
-    expand: true
   - src: ${GOOGLE_APPLICATION_CREDENTIALS}
     dest: /tmp/.gcp-credentials.json
   - src: ${GCP_OIDC_TOKEN_FILE}
@@ -47,6 +46,11 @@ trigger: >
     && event.transition.comment.command == "/fs-grillme"
     && event.state.change_proposal != null
     && !event.state.change_proposal.is_fork
+
+env:
+  sandbox:
+    GITHUB_ISSUE_URL: ${GITHUB_ISSUE_URL}
+    REPO_FULL_NAME: ${REPO_FULL_NAME}
 
 forge:
   github:
