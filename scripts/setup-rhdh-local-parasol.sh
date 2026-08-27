@@ -17,19 +17,8 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 AGENTIC_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 TARGET="${1:-$(cd "$AGENTIC_DIR/.." && pwd)/rhdh-local-parasol}"
 
-# The catalog URL must point to a repo the GITHUB_TOKEN can read.
-# If you forked rhdh-agentic, use your fork's owner here.
-if [ -z "${RHDH_CATALOG_OWNER:-}" ]; then
-  printf '\n'
-  printf '    The Parasol catalog is loaded from a GitHub repo.\n'
-  printf '    Your GITHUB_TOKEN must have read access to this repo.\n'
-  printf '\n'
-  printf '    If you forked rhdh-parasol/rhdh-agentic, enter your\n'
-  printf '    GitHub username. Otherwise, press Enter to use the upstream, assuming your token has read access to rhdh-parasol/rhdh-agentic.\n'
-  printf '\n'
-  read -rp '    GitHub owner [redhat-developer]: ' RHDH_CATALOG_OWNER
-  RHDH_CATALOG_OWNER="${RHDH_CATALOG_OWNER:-redhat-developer}"
-fi
+# Catalog lives in this public repo. Override with RHDH_CATALOG_OWNER if needed.
+RHDH_CATALOG_OWNER="${RHDH_CATALOG_OWNER:-rhdh-parasol}"
 CATALOG_URL="https://github.com/${RHDH_CATALOG_OWNER}/rhdh-agentic/blob/main/catalog/parasol-catalog-index.yaml"
 
 echo "==> Setting up rhdh-local-parasol at: $TARGET"
@@ -68,8 +57,8 @@ RHDH_IMAGE=quay.io/rhdh-community/rhdh:next
 AUTH_GITHUB_CLIENT_ID=
 AUTH_GITHUB_CLIENT_SECRET=
 
-# GitHub PAT for catalog URL ingestion (needed because catalog URL points to
-# rhdh-parasol/rhdh-agentic, outside the rhdh-parasol GitHub App scope).
+# Optional GitHub PAT fallback for catalog ingestion.
+# The rhdh-gh-app-parasol GitHub App can read this public repo directly.
 # Easiest: use 'gh auth token' if you have the gh CLI authenticated.
 GITHUB_TOKEN=
 ENVEOF

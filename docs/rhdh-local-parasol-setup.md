@@ -16,16 +16,12 @@ A dedicated RHDH local instance wired to the [rhdh-parasol](https://github.com/r
 - Node.js 18+
 - `gh` CLI authenticated
 - Owner/admin access to the `rhdh-parasol` GitHub org
-- **A fork of `rhdh-parasol/rhdh-agentic`** under your GitHub account
 
 > [!IMPORTANT]
-> RHDH loads the Parasol catalog from GitHub via a `GITHUB_TOKEN`. The GitHub
-> App is scoped to the `rhdh-parasol` org, so it cannot read the catalog from
-> `rhdh-parasol/rhdh-agentic`. Your `GITHUB_TOKEN` (a personal access
-> token) must have read access to whichever repo hosts the catalog. The
-> simplest path: fork `rhdh-parasol/rhdh-agentic` to your own account and
-> use a token that can read your repos. The setup script will ask for your
-> GitHub username and configure the catalog URL accordingly.
+> RHDH loads the Parasol catalog from this public repo
+> (`rhdh-parasol/rhdh-agentic`). The `rhdh-gh-app-parasol` GitHub App is
+> installed on the same org, so catalog ingestion does not need a personal
+> fork. A `GITHUB_TOKEN` PAT is only an optional fallback.
 
 ## Quick Start (GitHub App already exists)
 
@@ -72,6 +68,7 @@ NPM_CONFIG_LEGACY_PEER_DEPS=true npx @backstage/cli@0.36.2 create-github-app rhd
 ```
 
 When prompted, select **all three permission sets**:
+
 - Read access to content (catalog ingestion)
 - Read access to members (GitHub teams)
 - Read and Write to content and actions (scaffolder repo creation)
@@ -84,7 +81,7 @@ mv github-app-*-credentials.yaml configs/github-app-credentials.yaml
 
 **Important: Set the OAuth callback URL** (the `create-github-app` command does NOT set this):
 
-1. Go to https://github.com/organizations/rhdh-parasol/settings/apps/rhdh-gh-app-parasol
+1. Go to <https://github.com/organizations/rhdh-parasol/settings/apps/rhdh-gh-app-parasol>
 2. Set **Callback URL** to: `http://localhost:7007/api/auth/github/handler/frame`
 3. Save
 
@@ -112,8 +109,8 @@ RHDH_IMAGE=quay.io/rhdh-community/rhdh:next
 AUTH_GITHUB_CLIENT_ID=<your-client-id>
 AUTH_GITHUB_CLIENT_SECRET=<your-client-secret>
 
-# GitHub PAT for catalog URL ingestion (needed because catalog URL points to
-# rhdh-parasol/rhdh-agentic, outside the rhdh-parasol GitHub App scope).
+# Optional GitHub PAT fallback for catalog ingestion.
+# The rhdh-gh-app-parasol GitHub App can read this public repo directly.
 # Easiest: use `gh auth token` if you have the gh CLI authenticated.
 GITHUB_TOKEN=<your-github-pat>
 EOF
@@ -127,10 +124,10 @@ Add a User entity for each developer who needs to log in. The `metadata.name` mu
 apiVersion: backstage.io/v1alpha1
 kind: User
 metadata:
-  name: durandom
+  name: your-github-username
 spec:
   profile:
-    displayName: Marcel Hild
+    displayName: Your Name
   memberOf:
     - rhdh-team
 
@@ -233,7 +230,7 @@ plugins:
 podman compose up
 ```
 
-RHDH will be available at http://localhost:7007. Click "Sign in with GitHub" to authenticate.
+RHDH will be available at <http://localhost:7007>. Click "Sign in with GitHub" to authenticate.
 
 ## Using backstage-cli
 
@@ -255,29 +252,35 @@ npx backstage-cli actions execute catalog:query-catalog-entities \
 ## Pitfalls We Hit (and how to avoid them — 10 total)
 
 ### 1. GitHub App callback URL not set
+
 **Symptom:** GitHub OAuth redirects fail silently or loop.
 **Cause:** `backstage-cli create-github-app` creates the app for API integration only — it doesn't set the OAuth callback URL.
 **Fix:** Manually set `http://localhost:7007/api/auth/github/handler/frame` in the GitHub App settings.
 
 ### 2. Guest auth leaks through
+
 **Symptom:** Both "Guest" and "GitHub" login buttons appear.
 **Cause:** Backstage deep-merges config objects. The base `app-config.yaml` enables guest auth. Our overlay adds GitHub auth but doesn't disable guest.
 **Fix:** Explicitly set `guest: { dangerouslyAllowOutsideDevelopment: false }` in the local overlay.
 
 ### 3. Catalog locations replaced, not merged
+
 **Symptom:** User entities, templates, or other entities from the base config are missing.
 **Cause:** Backstage **replaces** arrays during config merge (deep-merge applies to objects only). When `app-config.local.yaml` defines `catalog.locations`, it completely overwrites the base config's locations.
 **Fix:** Include ALL needed locations in `app-config.local.yaml`, including local file references like `users.override.yaml`.
 
 ### 4. GitHub auth backend module is built-in
+
 **Symptom:** `Auth provider 'github' was already registered` error, backend shuts down.
 **Cause:** The RHDH `:next` image has the GitHub auth backend module (`@backstage/plugin-auth-backend-module-github-provider`) compiled into the backend. Adding it again as a dynamic OCI plugin causes a duplicate registration.
 **Fix:** Don't add `backstage-plugin-auth-backend-module-github-provider` to dynamic-plugins. Only the **frontend** auth plugin (`backstage-plugin-auth`) needs to be added as a dynamic plugin.
 
 ### 5. Sign-in resolver not configured
+
 **Symptom:** `Login failed; caused by NotFoundError: User not found` — even when the user entity exists in the catalog.
 **Cause:** RHDH may not have a default sign-in resolver for the GitHub auth provider. Without explicit configuration, the sign-in resolver silently fails.
 **Fix:** Add `signIn.resolvers` to the GitHub auth provider config:
+
 ```yaml
 github:
   development:
@@ -287,26 +290,31 @@ github:
 ```
 
 ### 6. User entity must match GitHub username
+
 **Symptom:** `User not found` after GitHub OAuth succeeds.
 **Cause:** The `usernameMatchingUserEntityName` resolver matches the GitHub username to `metadata.name` of a User entity in the catalog. No match = rejected.
-**Fix:** Create a User entity where `metadata.name` is the exact GitHub username (e.g., `durandom`).
+**Fix:** Create a User entity where `metadata.name` is the exact GitHub username (e.g., `your-github-username`).
 
 ### 7. Container name conflicts
+
 **Symptom:** `the container name "rhdh" is already in use`.
 **Cause:** The upstream `compose.yaml` uses hardcoded container names (`rhdh`, `rhdh-plugins-installer`). Running a second checkout conflicts.
 **Fix:** Rename container names in `compose.yaml` to `rhdh-parasol` and `rhdh-parasol-plugins-installer`.
 
 ### 8. NODE_ENV=development required
+
 **Symptom:** `Invalid client_id` error during backstage-cli auth.
 **Cause:** The auth backend's `CimdClient.validateCimdUrl()` only accepts `http://` client IDs when `NODE_ENV === "development"`. This is already set in `default.env` of recent rhdh-local versions.
 **Fix:** Ensure `NODE_ENV=development` is in `.env` or `default.env`.
 
-### 9. GITHUB_TOKEN needed for catalog URL outside GitHub App scope
+### 9. Catalog URL fails to load
+
 **Symptom:** `Unable to read url, no matching files found` for the Parasol catalog URL. Only 3 entities load (User + Group + Location).
-**Cause:** The catalog URL points to `rhdh-parasol/rhdh-agentic`, but the GitHub App is installed on the `rhdh-parasol` org only. The GitHub App integration can't read repos outside its installed orgs.
-**Fix:** Add a `GITHUB_TOKEN` PAT to `.env` and add `token: ${GITHUB_TOKEN}` to the `github.com` integration in `app-config.local.yaml`. The PAT acts as a fallback when the GitHub App doesn't have access. Use `gh auth token` if you have the gh CLI authenticated. **Important:** `podman compose restart` does NOT re-read `.env` — use `podman compose up -d --force-recreate` instead.
+**Cause:** The catalog location does not point at `rhdh-parasol/rhdh-agentic`, or the GitHub App / PAT cannot read that repo.
+**Fix:** Confirm `app-config.local.yaml` uses `https://github.com/rhdh-parasol/rhdh-agentic/blob/main/catalog/parasol-catalog-index.yaml`. The GitHub App on `rhdh-parasol` can read this public repo; a `GITHUB_TOKEN` PAT is only an optional fallback. **Important:** `podman compose restart` does NOT re-read `.env` — use `podman compose up -d --force-recreate` instead.
 
 ### 10. Auth frontend plugin version matters
+
 **Symptom:** The consent page at `/oauth2/authorize/:sessionId` shows "Not Found" (client-side 404). Server logs show a request to `/oauth2/authorize/undefined` immediately after the page loads.
 **Cause:** Plugin version `next__0.1.5` has a React Router bug — the session ID path param resolves to `undefined` when mounted via scalprum's dynamic routing.
 **Fix:** Use `bs_1.49.4__0.1.6` (or later). See [Tomas's PR](https://github.com/redhat-developer/rhdh/pull/4901) for the reference configuration.
