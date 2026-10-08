@@ -6,7 +6,7 @@ description: >-
   docs, OpenSpec, or any material change.
 tools: >-
   Bash(gh,jq,git,find,rg), Read, Glob, Grep
-model: opus
+model: claude-opus-4-6
 skills:
   - grilling
 ---
