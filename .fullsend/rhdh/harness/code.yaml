@@ -1,4 +1,4 @@
-base: https://raw.githubusercontent.com/fullsend-ai/agents/4bbe4f50ed8e33c60539eaa30ddc320edf8bcda0/harness/code.yaml#sha256=050382941bb4c4a3dad5f00253de854684c0d22dd8cc1ca0a548079774470aad
+base: https://raw.githubusercontent.com/fullsend-ai/agents/ea29de9bb8b1729b04c0597b48a5c7aae62deb71/harness/code.yaml#sha256=cfa49d4677cc4d6544fcf878e05b0f95620bbb62907289dbc5a22681a7679976
 agent: rhdh/agents/code.md
 policy: rhdh/policies/code.yaml
 host_files:

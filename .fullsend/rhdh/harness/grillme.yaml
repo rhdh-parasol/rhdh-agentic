@@ -7,7 +7,7 @@
 # Each run is one grill turn; the post-script posts the agent's final text.
 
 agent: rhdh/agents/grillme.md
-image: ghcr.io/fullsend-ai/fullsend-code:latest
+image: ghcr.io/fullsend-ai/fullsend-code:0.57.1
 policy: rhdh/policies/grillme.yaml
 readonly_repo: true
 
